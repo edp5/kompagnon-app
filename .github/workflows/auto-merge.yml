@@ -1,0 +1,32 @@
+name: Auto merge
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - labeled
+      - unlabeled
+      - reopened
+      - synchronize
+
+jobs:
+  auto-merge:
+    if: (contains(github.event.pull_request.labels.*.name, 'Ready to merge') && github.event.pull_request.draft == false) || (contains(github.event.pull_request.labels.*.name, 'Auto merge') && github.event.pull_request.draft == false)
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.SERVICE_TOKEN }}
+
+      - name: Rebase branch
+        run: gh pr update-branch ${{ github.event.pull_request.number }} --rebase
+        env:
+            GITHUB_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+
+      - name: Enable auto merge or merge pull request
+        run: gh pr merge ${{ github.event.pull_request.number }} --auto -s
+        env:
+          GITHUB_TOKEN: ${{ secrets.SERVICE_TOKEN }}
