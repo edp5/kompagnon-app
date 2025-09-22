@@ -16,17 +16,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: run auto merge
+        uses: edp5/edp5-actions/auto-merge@main
         with:
           token: ${{ secrets.SERVICE_TOKEN }}
-
-      - name: Rebase branch
-        run: gh pr update-branch ${{ github.event.pull_request.number }} --rebase
-        env:
-            GITHUB_TOKEN: ${{ secrets.SERVICE_TOKEN }}
-
-      - name: Enable auto merge or merge pull request
-        run: gh pr merge ${{ github.event.pull_request.number }} --auto -s
-        env:
-          GITHUB_TOKEN: ${{ secrets.SERVICE_TOKEN }}
