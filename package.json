@@ -21,7 +21,7 @@
     "expo": "~54.0.12",
     "expo-env": "^1.1.1",
     "expo-status-bar": "~3.0.8",
-    "react": "19.1.1",
+    "react": "19.2.0",
     "react-dom": "19.1.1",
     "react-native": "^0.81.4",
     "react-test-renderer": "^19.1.1"
