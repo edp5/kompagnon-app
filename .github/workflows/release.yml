@@ -1,0 +1,13 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: call release
+        uses: edp5/edp5-actions/release@v1.0.3
+        with:
+          token: ${{ secrets.SERVICE_TOKEN }}
