@@ -2,12 +2,14 @@ name: commits check
 
 on:
   pull_request:
+  merge_group:
 
 jobs:
   block-autosquash-commits:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
+    if: github.event_name != 'merge_group'
     steps:
       - name: Block Autosquash Commits
         uses: xt0rted/block-autosquash-commits-action@v2

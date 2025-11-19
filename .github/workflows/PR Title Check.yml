@@ -5,18 +5,11 @@ on:
     types: [opened, reopened, edited, synchronize]
     branches:
       - main
+  merge_group:
 
 jobs:
   check-title:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v5
-
-      - name: Validate PR title
-        run: |
-          if [[ ! "$(echo '${{ github.event.pull_request.title }}' | grep -E '^(fix|feat|tech|docs|bump|style|refactor|chore|perf|test|revert|breaking)(\([^)]+\))?:')" ]]; then
-            echo "Error: Pull request title must start with one of the following keywords: fix, feat, tech, docs, bump, style, refactor, chore, perf, test, breaking or revert. Optionally, it can include a scope in parentheses followed by a colon (e.g., 'feat(scope):')."
-            exit 1
-          fi
+      - uses: edp5/edp5-actions/pr-title-check@v1.0.3
