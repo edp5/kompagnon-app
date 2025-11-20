@@ -50,7 +50,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["tests/*.{js,mjs,ts,tsx}"],
+    files: ["**/*.test.{js,mjs,ts,tsx}", "**/*.spec.{js,mjs,ts,tsx}"],
     languageOptions: {
       globals: {
         ...globals.jest,
