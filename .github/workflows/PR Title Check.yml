@@ -12,4 +12,4 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: edp5/edp5-actions/pr-title-check@v1.0.3
+      - uses: edp5/edp5-actions/pr-title-check@v1.1.2
