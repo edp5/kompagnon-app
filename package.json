@@ -19,7 +19,7 @@
   },
   "type": "module",
   "dependencies": {
-    "expo": "~54.0.26",
+    "expo": "~54.0.27",
     "expo-env": "^1.1.1",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
