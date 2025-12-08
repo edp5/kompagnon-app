@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Check expo dependencies
-        run: npx expo-doctor
+        run: npm run dependencies-check
 
   lint:
     if: github.event.pull_request.draft == false
