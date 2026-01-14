@@ -1,11 +1,41 @@
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { apiFetch } from "./utils/api-fetch.js";
+
 export default function App() {
+  const [apiIsActive, setApiIsActive] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function doCheck() {
+      try {
+        const request = await apiFetch("/api/health");
+        if (mounted && request && request.status === 200) {
+          setApiIsActive(true);
+        }
+      } catch (err) {
+        // keep apiIsActive as false; log for debugging
+        console.warn("Health check failed", err);
+      }
+    }
+
+    doCheck();
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text>Hello, World!</Text>
-      <StatusBar style="auto" />
+      {apiIsActive ? (
+        <>
+          <Text>Hello, World!</Text>
+          <StatusBar style="auto" />
+        </>
+      ) : (
+        <Text>API is not active</Text>
+      )}
     </View>
   );
 }
