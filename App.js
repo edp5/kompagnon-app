@@ -2,8 +2,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { apiFetch } from "./utils/api-fetch.js";
 import RegistrationScreen from "./screens/RegistrationScreen";
+import { apiFetch } from "./utils/api-fetch.js";
 
 export default function App() {
   const [apiIsActive, setApiIsActive] = useState(false);

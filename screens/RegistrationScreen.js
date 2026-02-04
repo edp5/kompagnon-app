@@ -1,25 +1,24 @@
-import React, { useState } from 'react';
+import { StatusBar } from "expo-status-bar";
+import React, { useState } from "react";
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   SafeAreaView,
-  Image
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { apiFetch } from '../utils/api-fetch';
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View } from "react-native";
+
+import { apiFetch } from "../utils/api-fetch";
 
 export default function RegistrationScreen({ onRegisterSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -28,43 +27,43 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 
     // Basic validation
     if (!email || !password || !confirmPassword) {
-      setError('All fields are required.');
+      setError("All fields are required.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await apiFetch('/api/register', {
-        method: 'POST',
+      const response = await apiFetch("/api/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
 
       if (response && response.ok) {
-        Alert.alert('Success', 'Account created successfully!', [
-          { text: 'OK', onPress: () => onRegisterSuccess && onRegisterSuccess() }
+        Alert.alert("Success", "Account created successfully!", [
+          { text: "OK", onPress: () => onRegisterSuccess && onRegisterSuccess() },
         ]);
       } else {
         const data = await response.json();
-        setError(data.message || 'Registration failed. Please try again.');
-        console.warn('Registration failed:', data);
+        setError(data.message || "Registration failed. Please try again.");
+        console.warn("Registration failed:", data);
       }
     } catch (err) {
-      setError('An error occurred. Please check your connection.');
-      console.error('Registration error:', err);
+      setError("An error occurred. Please check your connection.");
+      console.error("Registration error:", err);
     } finally {
       setLoading(false);
     }
@@ -74,7 +73,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -161,7 +160,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -170,22 +169,22 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   headerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
     marginTop: 20,
   },
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: '#2D3436',
+    backgroundColor: "#2D3436",
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -193,32 +192,32 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 40,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#2D3436',
+    fontWeight: "700",
+    color: "#2D3436",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#636E72',
+    color: "#636E72",
   },
   formContainer: {
-    width: '100%',
+    width: "100%",
   },
   errorContainer: {
-    backgroundColor: '#FFE5E5',
+    backgroundColor: "#FFE5E5",
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#FF7675',
+    borderLeftColor: "#FF7675",
   },
   errorText: {
-    color: '#D63031',
+    color: "#D63031",
     fontSize: 14,
   },
   inputGroup: {
@@ -226,59 +225,59 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2D3436',
+    fontWeight: "600",
+    color: "#2D3436",
     marginBottom: 8,
     marginLeft: 4,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#DFE6E9',
+    borderColor: "#DFE6E9",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#2D3436',
-    shadowColor: '#000',
+    color: "#2D3436",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   button: {
-    backgroundColor: '#0984E3',
+    backgroundColor: "#0984E3",
     paddingVertical: 18,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
-    shadowColor: '#0984E3',
+    shadowColor: "#0984E3",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#74B9FF',
+    backgroundColor: "#74B9FF",
     opacity: 0.7,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   loginLinkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 24,
   },
   loginLinkText: {
-    color: '#636E72',
+    color: "#636E72",
     fontSize: 14,
   },
   loginLinkHighlight: {
-    color: '#0984E3',
+    color: "#0984E3",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
