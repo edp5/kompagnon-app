@@ -1,7 +1,19 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 import App from "../App.js";
 import * as apiFetchModule from "../utils/api-fetch.js";
+
+
+jest.mock("../screens/RegistrationScreen", () => {
+  const { View, Button } = require("react-native");
+  const MockRegistrationScreen = ({ onRegisterSuccess }) => (
+    <View>
+      <Button title="Mock Register" onPress={onRegisterSuccess} />
+    </View>
+  );
+  MockRegistrationScreen.displayName = "MockRegistrationScreen";
+  return MockRegistrationScreen;
+});
 
 describe("App", () => {
   afterEach(() => {
@@ -14,7 +26,8 @@ describe("App", () => {
       jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 500 });
 
       // when
-      const { findByText } = render(<App />);
+      const { getByText, findByText } = render(<App />);
+      fireEvent.press(getByText("Mock Register"));
 
       // then
       const textElement = await findByText("API is not active");
@@ -29,7 +42,8 @@ describe("App", () => {
       jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 200 });
 
       // when
-      const { findByText } = render(<App />);
+      const { getByText, findByText } = render(<App />);
+      fireEvent.press(getByText("Mock Register"));
 
       // then
       const textElement = await findByText("Hello, World!");

@@ -2,10 +2,12 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import RegistrationScreen from "./screens/RegistrationScreen";
 import { apiFetch } from "./utils/api-fetch.js";
 
 export default function App() {
   const [apiIsActive, setApiIsActive] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -25,6 +27,15 @@ export default function App() {
     doCheck();
     return () => { mounted = false; };
   }, []);
+
+  if (!isRegistered) {
+    return (
+      <View style={styles.container}>
+        <RegistrationScreen onRegisterSuccess={() => setIsRegistered(true)} />
+        <StatusBar style="auto" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
