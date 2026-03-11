@@ -493,4 +493,33 @@ describe("RegistrationScreen — Integration Tests", () => {
             });
         });
     });
+
+    // ─── ANIMATIONS (regression) ─────────────────────────────────────────────────
+
+    describe("Animations", () => {
+        it("should render the header with all elements (animation regression)", () => {
+            const { getByText, getByTestId } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            expect(getByTestId("header-container")).toBeTruthy();
+            expect(getByText("Create Account")).toBeTruthy();
+            expect(getByText("Join Kompagnon today")).toBeTruthy();
+        });
+
+        it("should still show error container even with shake animation", () => {
+            const { getByText, getByTestId } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            fireEvent.press(getByText("Sign Up"));
+            expect(getByTestId("error-container")).toBeTruthy();
+            expect(getByText("All fields are required.")).toBeTruthy();
+        });
+
+        it("should render Sign Up button with animated wrapper", () => {
+            const { getByText } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            expect(getByText("Sign Up")).toBeTruthy();
+        });
+    });
 });
