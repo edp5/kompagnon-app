@@ -41,6 +41,8 @@ export function getPasswordStrength(pwd) {
 }
 
 export default function RegistrationScreen({ onRegisterSuccess }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -119,7 +121,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const handleRegister = async () => {
     setErrorWithShake(null);
 
-    if (!email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setErrorWithShake("All fields are required.");
       return;
     }
@@ -142,7 +144,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password }),
       });
 
       if (response && response.ok) {
@@ -201,6 +203,30 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                 <Text style={styles.errorText}>{error}</Text>
               </Animated.View>
             )}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="John"
+                placeholderTextColor="#999"
+                value={firstName}
+                onChangeText={setFirstName}
+                testID="firstName-input"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Doe"
+                placeholderTextColor="#999"
+                value={lastName}
+                onChangeText={setLastName}
+                testID="lastName-input"
+              />
+            </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>

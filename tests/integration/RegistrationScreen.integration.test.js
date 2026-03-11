@@ -34,10 +34,12 @@ describe("RegistrationScreen — Integration Tests", () => {
     // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
     function fillAndSubmit(
-        { email, password, confirmPassword },
+        { firstName, lastName, email, password, confirmPassword },
         getByPlaceholderText,
         getByText
     ) {
+        if (firstName !== undefined) fireEvent.changeText(getByPlaceholderText("John"), firstName);
+        if (lastName !== undefined) fireEvent.changeText(getByPlaceholderText("Doe"), lastName);
         fireEvent.changeText(getByPlaceholderText("hello@example.com"), email ?? "");
         fireEvent.changeText(getByPlaceholderText("Min. 6 characters"), password ?? "");
         fireEvent.changeText(
@@ -57,6 +59,8 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             expect(getByText("Create Account")).toBeTruthy();
             expect(getByText("Join Kompagnon today")).toBeTruthy();
+            expect(getByPlaceholderText("John")).toBeTruthy();
+            expect(getByPlaceholderText("Doe")).toBeTruthy();
             expect(getByPlaceholderText("hello@example.com")).toBeTruthy();
             expect(getByPlaceholderText("Min. 6 characters")).toBeTruthy();
             expect(getByPlaceholderText("Re-enter your password")).toBeTruthy();
@@ -227,7 +231,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "", password: "secret123", confirmPassword: "secret123" },
+                { firstName: "John", lastName: "Doe", email: "", password: "test-Password123!", confirmPassword: "test-Password123!" },
                 getByPlaceholderText,
                 getByText
             );
@@ -241,7 +245,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "user@example.com", password: "", confirmPassword: "" },
+                { firstName: "John", lastName: "Doe", email: "user@example.com", password: "", confirmPassword: "" },
                 getByPlaceholderText,
                 getByText
             );
@@ -256,8 +260,10 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             fillAndSubmit(
                 {
+                    firstName: "John",
+                    lastName: "Doe",
                     email: "user@example.com",
-                    password: "secret123",
+                    password: "test-Password123!",
                     confirmPassword: "different",
                 },
                 getByPlaceholderText,
@@ -273,7 +279,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "user@example.com", password: "abc", confirmPassword: "abc" },
+                { firstName: "John", lastName: "Doe", email: "user@example.com", password: "abc", confirmPassword: "abc" },
                 getByPlaceholderText,
                 getByText
             );
@@ -299,8 +305,8 @@ describe("RegistrationScreen — Integration Tests", () => {
                 fillAndSubmit(
                     {
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -326,9 +332,11 @@ describe("RegistrationScreen — Integration Tests", () => {
             await act(async () => {
                 fillAndSubmit(
                     {
+                        firstName: "John",
+                        lastName: "Doe",
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -340,8 +348,10 @@ describe("RegistrationScreen — Integration Tests", () => {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        firstName: "John",
+                        lastName: "Doe",
                         email: "user@example.com",
-                        password: "secret123",
+                        password: "test-Password123!",
                     }),
                 });
             });
@@ -357,9 +367,11 @@ describe("RegistrationScreen — Integration Tests", () => {
             await act(async () => {
                 fillAndSubmit(
                     {
+                        firstName: "John",
+                        lastName: "Doe",
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -396,8 +408,8 @@ describe("RegistrationScreen — Integration Tests", () => {
                 fillAndSubmit(
                     {
                         email: "taken@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -423,9 +435,11 @@ describe("RegistrationScreen — Integration Tests", () => {
             await act(async () => {
                 fillAndSubmit(
                     {
+                        firstName: "John",
+                        lastName: "Doe",
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -449,9 +463,11 @@ describe("RegistrationScreen — Integration Tests", () => {
             await act(async () => {
                 fillAndSubmit(
                     {
+                        firstName: "John",
+                        lastName: "Doe",
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
@@ -480,8 +496,8 @@ describe("RegistrationScreen — Integration Tests", () => {
                 fillAndSubmit(
                     {
                         email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
+                        password: "test-Password123!",
+                        confirmPassword: "test-Password123!",
                     },
                     getByPlaceholderText,
                     getByText
