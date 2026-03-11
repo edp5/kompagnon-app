@@ -11,7 +11,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View } from "react-native";
+  View,
+} from "react-native";
 
 import { apiFetch } from "../utils/api-fetch";
 
@@ -21,11 +22,12 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async () => {
     setError(null);
 
-    // Basic validation
     if (!email || !password || !confirmPassword) {
       setError("All fields are required.");
       return;
@@ -78,7 +80,6 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerContainer}>
-             {/* Placeholder for Logo - using Text for now but designed to be replaced or work as is */}
             <View style={styles.logoContainer}>
               <Text style={styles.logoText}>K</Text>
             </View>
@@ -109,26 +110,48 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Min. 6 characters"
-                placeholderTextColor="#999"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="Min. 6 characters"
+                  placeholderTextColor="#999"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  testID="password-input"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword((v) => !v)}
+                  testID="toggle-password-visibility"
+                  accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                >
+                  <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁"}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Re-enter your password"
-                placeholderTextColor="#999"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="Re-enter your password"
+                  placeholderTextColor="#999"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  testID="confirm-password-input"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowConfirmPassword((v) => !v)}
+                  testID="toggle-confirm-password-visibility"
+                  accessibilityLabel={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  <Text style={styles.eyeIcon}>{showConfirmPassword ? "🙈" : "👁"}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -243,6 +266,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DFE6E9",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  inputWithIcon: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: "#2D3436",
+  },
+  eyeButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  eyeIcon: {
+    fontSize: 18,
   },
   button: {
     backgroundColor: "#0984E3",
