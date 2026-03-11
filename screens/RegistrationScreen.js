@@ -16,6 +16,29 @@ import {
 
 import { apiFetch } from "../utils/api-fetch";
 
+/**
+ * Evaluates the strength of a password.
+ * @param {string} pwd
+ * @returns {{ level: string, label: string, color: string, fraction: number }}
+ */
+export function getPasswordStrength(pwd) {
+  if (!pwd || pwd.length === 0) {
+    return { level: "none", label: "", color: "transparent", fraction: 0 };
+  }
+
+  const hasLetters = /[a-zA-Z]/.test(pwd);
+  const hasNumbers = /[0-9]/.test(pwd);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(pwd);
+
+  if (pwd.length >= 10 && hasLetters && hasNumbers && hasSpecial) {
+    return { level: "strong", label: "Fort", color: "#00B894", fraction: 1 };
+  }
+  if (pwd.length >= 6 && hasLetters && hasNumbers) {
+    return { level: "fair", label: "Moyen", color: "#FDCB6E", fraction: 0.66 };
+  }
+  return { level: "weak", label: "Faible", color: "#FF7675", fraction: 0.33 };
+}
+
 export default function RegistrationScreen({ onRegisterSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +47,8 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordStrength = getPasswordStrength(password);
 
   const handleRegister = async () => {
     setError(null);
@@ -89,7 +114,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 
           <View style={styles.formContainer}>
             {error && (
-              <View style={styles.errorContainer}>
+              <View style={styles.errorContainer} testID="error-container">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -129,6 +154,30 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                   <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁"}</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Password strength bar */}
+              {passwordStrength.level !== "none" && (
+                <View style={styles.strengthContainer} testID="password-strength-container">
+                  <View style={styles.strengthBarBackground}>
+                    <View
+                      style={[
+                        styles.strengthBarFill,
+                        {
+                          width: `${Math.round(passwordStrength.fraction * 100)}%`,
+                          backgroundColor: passwordStrength.color,
+                        },
+                      ]}
+                      testID="password-strength-bar"
+                    />
+                  </View>
+                  <Text
+                    style={[styles.strengthLabel, { color: passwordStrength.color }]}
+                    testID="password-strength-label"
+                  >
+                    {passwordStrength.label}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -294,6 +343,29 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     fontSize: 18,
+  },
+  strengthContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 8,
+  },
+  strengthBarBackground: {
+    flex: 1,
+    height: 5,
+    backgroundColor: "#DFE6E9",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  strengthBarFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  strengthLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    width: 42,
+    textAlign: "right",
   },
   button: {
     backgroundColor: "#0984E3",

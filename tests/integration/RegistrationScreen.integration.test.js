@@ -4,6 +4,7 @@ import {
     render,
     waitFor,
 } from "@testing-library/react-native";
+import { getPasswordStrength } from "../../screens/RegistrationScreen";
 import { Alert } from "react-native";
 
 import RegistrationScreen from "../../screens/RegistrationScreen";
@@ -135,6 +136,75 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             expect(passwordInput.props.secureTextEntry).toBe(false);
             expect(confirmInput.props.secureTextEntry).toBe(true);
+        });
+    });
+
+    // ─── PASSWORD STRENGTH BAR ────────────────────────────────────────────────────
+
+    describe("Password strength — getPasswordStrength()", () => {
+        it("should return level 'none' for empty password", () => {
+            expect(getPasswordStrength("").level).toBe("none");
+            expect(getPasswordStrength("").label).toBe("");
+        });
+
+        it("should return 'weak' for a short password", () => {
+            const result = getPasswordStrength("abc");
+            expect(result.level).toBe("weak");
+            expect(result.label).toBe("Faible");
+            expect(result.color).toBe("#FF7675");
+        });
+
+        it("should return 'weak' for a long password with only letters", () => {
+            const result = getPasswordStrength("abcdefgh");
+            expect(result.level).toBe("weak");
+        });
+
+        it("should return 'fair' for a password with letters and numbers >= 6 chars", () => {
+            const result = getPasswordStrength("abc123");
+            expect(result.level).toBe("fair");
+            expect(result.label).toBe("Moyen");
+            expect(result.color).toBe("#FDCB6E");
+        });
+
+        it("should return 'strong' for a password with letters, numbers, special char >= 10 chars", () => {
+            const result = getPasswordStrength("Secure@12345");
+            expect(result.level).toBe("strong");
+            expect(result.label).toBe("Fort");
+            expect(result.color).toBe("#00B894");
+        });
+    });
+
+    describe("Password strength bar — UI", () => {
+        it("should not show strength bar when password is empty", () => {
+            const { queryByTestId } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            expect(queryByTestId("password-strength-container")).toBeNull();
+        });
+
+        it("should show 'Faible' for a weak password", () => {
+            const { getByTestId, getByText } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            fireEvent.changeText(getByTestId("password-input"), "abc");
+            expect(getByTestId("password-strength-container")).toBeTruthy();
+            expect(getByText("Faible")).toBeTruthy();
+        });
+
+        it("should show 'Moyen' for a fair password", () => {
+            const { getByTestId, getByText } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            fireEvent.changeText(getByTestId("password-input"), "abc123");
+            expect(getByText("Moyen")).toBeTruthy();
+        });
+
+        it("should show 'Fort' for a strong password", () => {
+            const { getByTestId, getByText } = render(
+                <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
+            );
+            fireEvent.changeText(getByTestId("password-input"), "Secure@12345");
+            expect(getByText("Fort")).toBeTruthy();
         });
     });
 
