@@ -1,8 +1,9 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -48,23 +49,88 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // ─── Animations ──────────────────────────────────────────────────────────────
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const headerTranslateY = useRef(new Animated.Value(-20)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  // Fade-in on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(headerTranslateY, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 800,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Shake the error box whenever a new error appears
+  const triggerShake = () => {
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // Button press scale feedback
+  const onButtonPressIn = () => {
+    Animated.spring(buttonScale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+  const onButtonPressOut = () => {
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  // ─── Logic ───────────────────────────────────────────────────────────────────
   const passwordStrength = getPasswordStrength(password);
 
+  const setErrorWithShake = (msg) => {
+    setError(msg);
+    if (msg) triggerShake();
+  };
+
   const handleRegister = async () => {
-    setError(null);
+    setErrorWithShake(null);
 
     if (!email || !password || !confirmPassword) {
-      setError("All fields are required.");
+      setErrorWithShake("All fields are required.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setErrorWithShake("Passwords do not match.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setErrorWithShake("Password must be at least 6 characters long.");
       return;
     }
 
@@ -85,11 +151,11 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         ]);
       } else {
         const data = await response.json();
-        setError(data.message || "Registration failed. Please try again.");
+        setErrorWithShake(data.message || "Registration failed. Please try again.");
         console.warn("Registration failed:", data);
       }
     } catch (err) {
-      setError("An error occurred. Please check your connection.");
+      setErrorWithShake("An error occurred. Please check your connection.");
       console.error("Registration error:", err);
     } finally {
       setLoading(false);
@@ -104,19 +170,36 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         style={styles.keyboardAvoidingView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.headerContainer}>
+          {/* Animated header */}
+          <Animated.View
+            style={[
+              styles.headerContainer,
+              {
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+            testID="header-container"
+          >
             <View style={styles.logoContainer}>
               <Text style={styles.logoText}>K</Text>
             </View>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Join Kompagnon today</Text>
-          </View>
+          </Animated.View>
 
-          <View style={styles.formContainer}>
+          {/* Animated form */}
+          <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
             {error && (
-              <View style={styles.errorContainer} testID="error-container">
+              <Animated.View
+                style={[
+                  styles.errorContainer,
+                  { transform: [{ translateX: shakeAnim }] },
+                ]}
+                testID="error-container"
+              >
                 <Text style={styles.errorText}>{error}</Text>
-              </View>
+              </Animated.View>
             )}
 
             <View style={styles.inputGroup}>
@@ -203,18 +286,23 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleRegister}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Sign Up</Text>
-              )}
-            </TouchableOpacity>
+            {/* Animated submit button */}
+            <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleRegister}
+                onPressIn={onButtonPressIn}
+                onPressOut={onButtonPressOut}
+                disabled={loading}
+                activeOpacity={1}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
 
             <View style={styles.loginLinkContainer}>
               <Text style={styles.loginLinkText}>Already have an account? </Text>
@@ -222,7 +310,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                 <Text style={styles.loginLinkHighlight}>Log In</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
