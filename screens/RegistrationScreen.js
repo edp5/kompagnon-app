@@ -15,39 +15,20 @@ import {
   View,
 } from "react-native";
 
+import PasswordInput, { getPasswordStrength } from "../components/PasswordInput";
 import { apiFetch } from "../utils/api-fetch";
 
-/**
- * Evaluates the strength of a password.
- * @param {string} pwd
- * @returns {{ level: string, label: string, color: string, fraction: number }}
- */
-export function getPasswordStrength(pwd) {
-  if (!pwd || pwd.length === 0) {
-    return { level: "none", label: "", color: "transparent", fraction: 0 };
-  }
-
-  const hasLetters = /[a-zA-Z]/.test(pwd);
-  const hasNumbers = /[0-9]/.test(pwd);
-  const hasSpecial = /[^a-zA-Z0-9]/.test(pwd);
-
-  if (pwd.length >= 10 && hasLetters && hasNumbers && hasSpecial) {
-    return { level: "strong", label: "Fort", color: "#00B894", fraction: 1 };
-  }
-  if (pwd.length >= 6 && hasLetters && hasNumbers) {
-    return { level: "fair", label: "Moyen", color: "#FDCB6E", fraction: 0.66 };
-  }
-  return { level: "weak", label: "Faible", color: "#FF7675", fraction: 0.33 };
-}
+// Re-export for backward compatibility with existing tests
+export { getPasswordStrength };
 
 export default function RegistrationScreen({ onRegisterSuccess }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ─── Animations ──────────────────────────────────────────────────────────────
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -109,8 +90,6 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   };
 
   // ─── Logic ───────────────────────────────────────────────────────────────────
-  const passwordStrength = getPasswordStrength(password);
-
   const setErrorWithShake = (msg) => {
     setError(msg);
     if (msg) triggerShake();
@@ -119,18 +98,18 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const handleRegister = async () => {
     setErrorWithShake(null);
 
-    if (!email || !password || !confirmPassword) {
-      setErrorWithShake("All fields are required.");
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setErrorWithShake("Tous les champs sont obligatoires.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorWithShake("Passwords do not match.");
+      setErrorWithShake("Les mots de passe ne correspondent pas.");
       return;
     }
 
     if (password.length < 6) {
-      setErrorWithShake("Password must be at least 6 characters long.");
+      setErrorWithShake("Le mot de passe doit comporter au moins 6 caractères.");
       return;
     }
 
@@ -142,20 +121,20 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password }),
       });
 
       if (response && response.ok) {
-        Alert.alert("Success", "Account created successfully!", [
+        Alert.alert("Succès", "Compte créé avec succès !", [
           { text: "OK", onPress: () => onRegisterSuccess && onRegisterSuccess() },
         ]);
       } else {
         const data = await response.json();
-        setErrorWithShake(data.message || "Registration failed. Please try again.");
+        setErrorWithShake(data.message || "Inscription échouée. Veuillez réessayer.");
         console.warn("Registration failed:", data);
       }
     } catch (err) {
-      setErrorWithShake("An error occurred. Please check your connection.");
+      setErrorWithShake("Une erreur est survenue. Vérifiez votre connexion.");
       console.error("Registration error:", err);
     } finally {
       setLoading(false);
@@ -170,7 +149,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         style={styles.keyboardAvoidingView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Animated header */}
+          {/* En-tête animé */}
           <Animated.View
             style={[
               styles.headerContainer,
@@ -184,11 +163,11 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
             <View style={styles.logoContainer}>
               <Text style={styles.logoText}>K</Text>
             </View>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join Kompagnon today</Text>
+            <Text style={styles.title}>Créer un compte</Text>
+            <Text style={styles.subtitle}>Rejoignez Kompagnon aujourd'hui</Text>
           </Animated.View>
 
-          {/* Animated form */}
+          {/* Formulaire animé */}
           <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
             {error && (
               <Animated.View
@@ -197,96 +176,75 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                   { transform: [{ translateX: shakeAnim }] },
                 ]}
                 testID="error-container"
+                accessibilityLiveRegion="polite"
+                accessibilityRole="alert"
               >
                 <Text style={styles.errorText}>{error}</Text>
               </Animated.View>
             )}
 
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>Prénom</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Jean"
+                placeholderTextColor="#999"
+                value={firstName}
+                onChangeText={setFirstName}
+                testID="firstName-input"
+                accessibilityLabel="Prénom"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nom</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Dupont"
+                placeholderTextColor="#999"
+                value={lastName}
+                onChangeText={setLastName}
+                testID="lastName-input"
+                accessibilityLabel="Nom"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                placeholder="hello@example.com"
+                placeholder="bonjour@exemple.com"
                 placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Adresse email"
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.inputWithIcon}
-                  placeholder="Min. 6 characters"
-                  placeholderTextColor="#999"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  testID="password-input"
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword((v) => !v)}
-                  testID="toggle-password-visibility"
-                  accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                >
-                  <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁"}</Text>
-                </TouchableOpacity>
-              </View>
+            <PasswordInput
+              label="Mot de passe"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Min. 6 caractères"
+              hint="Minimum 6 caractères, avec lettres, chiffres et symboles pour un mot de passe fort"
+              testID="password-input"
+              toggleTestID="toggle-password-visibility"
+              showStrength
+            />
 
-              {/* Password strength bar */}
-              {passwordStrength.level !== "none" && (
-                <View style={styles.strengthContainer} testID="password-strength-container">
-                  <View style={styles.strengthBarBackground}>
-                    <View
-                      style={[
-                        styles.strengthBarFill,
-                        {
-                          width: `${Math.round(passwordStrength.fraction * 100)}%`,
-                          backgroundColor: passwordStrength.color,
-                        },
-                      ]}
-                      testID="password-strength-bar"
-                    />
-                  </View>
-                  <Text
-                    style={[styles.strengthLabel, { color: passwordStrength.color }]}
-                    testID="password-strength-label"
-                  >
-                    {passwordStrength.label}
-                  </Text>
-                </View>
-              )}
-            </View>
+            <PasswordInput
+              label="Confirmer le mot de passe"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirmez votre mot de passe"
+              testID="confirm-password-input"
+              toggleTestID="toggle-confirm-password-visibility"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.inputWithIcon}
-                  placeholder="Re-enter your password"
-                  placeholderTextColor="#999"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  testID="confirm-password-input"
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword((v) => !v)}
-                  testID="toggle-confirm-password-visibility"
-                  accessibilityLabel={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                >
-                  <Text style={styles.eyeIcon}>{showConfirmPassword ? "🙈" : "👁"}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Animated submit button */}
+            {/* Bouton d'inscription animé */}
             <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
               <TouchableOpacity
                 style={[styles.button, loading && styles.buttonDisabled]}
@@ -295,19 +253,22 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                 onPressOut={onButtonPressOut}
                 disabled={loading}
                 activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel="S'inscrire"
+                accessibilityState={{ disabled: loading }}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color="#fff" accessibilityLabel="Chargement…" />
                 ) : (
-                  <Text style={styles.buttonText}>Sign Up</Text>
+                  <Text style={styles.buttonText}>S'inscrire</Text>
                 )}
               </TouchableOpacity>
             </Animated.View>
 
             <View style={styles.loginLinkContainer}>
-              <Text style={styles.loginLinkText}>Already have an account? </Text>
-              <TouchableOpacity>
-                <Text style={styles.loginLinkHighlight}>Log In</Text>
+              <Text style={styles.loginLinkText}>Déjà un compte ? </Text>
+              <TouchableOpacity accessibilityRole="button">
+                <Text style={styles.loginLinkHighlight}>Se connecter</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -403,57 +364,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#DFE6E9",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  inputWithIcon: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
-    color: "#2D3436",
-  },
-  eyeButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  eyeIcon: {
-    fontSize: 18,
-  },
-  strengthContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    gap: 8,
-  },
-  strengthBarBackground: {
-    flex: 1,
-    height: 5,
-    backgroundColor: "#DFE6E9",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  strengthBarFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  strengthLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    width: 42,
-    textAlign: "right",
   },
   button: {
     backgroundColor: "#0984E3",

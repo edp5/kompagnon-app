@@ -39,17 +39,19 @@ describe("RegistrationScreen — Integration Tests", () => {
     // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
     function fillAndSubmit(
-        { email, password, confirmPassword },
+        { firstName, lastName, email, password, confirmPassword },
         getByPlaceholderText,
         getByText
     ) {
-        fireEvent.changeText(getByPlaceholderText("hello@example.com"), email ?? "");
-        fireEvent.changeText(getByPlaceholderText("Min. 6 characters"), password ?? "");
+        if (firstName !== undefined) fireEvent.changeText(getByPlaceholderText("Jean"), firstName);
+        if (lastName !== undefined) fireEvent.changeText(getByPlaceholderText("Dupont"), lastName);
+        fireEvent.changeText(getByPlaceholderText("bonjour@exemple.com"), email ?? "");
+        fireEvent.changeText(getByPlaceholderText("Min. 6 caractères"), password ?? "");
         fireEvent.changeText(
-            getByPlaceholderText("Re-enter your password"),
+            getByPlaceholderText("Confirmez votre mot de passe"),
             confirmPassword ?? ""
         );
-        fireEvent.press(getByText("Sign Up"));
+        fireEvent.press(getByText("S'inscrire"));
     }
 
     // ─── RENDERING ───────────────────────────────────────────────────────────────
@@ -60,13 +62,15 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            expect(getByText("Create Account")).toBeTruthy();
-            expect(getByText("Join Kompagnon today")).toBeTruthy();
-            expect(getByPlaceholderText("hello@example.com")).toBeTruthy();
-            expect(getByPlaceholderText("Min. 6 characters")).toBeTruthy();
-            expect(getByPlaceholderText("Re-enter your password")).toBeTruthy();
-            expect(getByText("Sign Up")).toBeTruthy();
-            expect(getByText("Log In")).toBeTruthy();
+            expect(getByText("Créer un compte")).toBeTruthy();
+            expect(getByText("Rejoignez Kompagnon aujourd'hui")).toBeTruthy();
+            expect(getByPlaceholderText("Jean")).toBeTruthy();
+            expect(getByPlaceholderText("Dupont")).toBeTruthy();
+            expect(getByPlaceholderText("bonjour@exemple.com")).toBeTruthy();
+            expect(getByPlaceholderText("Min. 6 caractères")).toBeTruthy();
+            expect(getByPlaceholderText("Confirmez votre mot de passe")).toBeTruthy();
+            expect(getByText("S'inscrire")).toBeTruthy();
+            expect(getByText("Se connecter")).toBeTruthy();
         });
 
         it("should not display any error on initial render", () => {
@@ -74,8 +78,8 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            expect(queryByText("All fields are required.")).toBeNull();
-            expect(queryByText("Passwords do not match.")).toBeNull();
+            expect(queryByText("Tous les champs sont obligatoires.")).toBeNull();
+            expect(queryByText("Les mots de passe ne correspondent pas.")).toBeNull();
         });
     });
 
@@ -221,9 +225,9 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            fireEvent.press(getByText("Sign Up"));
+            fireEvent.press(getByText("S'inscrire"));
 
-            expect(getByText("All fields are required.")).toBeTruthy();
+            expect(getByText("Tous les champs sont obligatoires.")).toBeTruthy();
         });
 
         it("should show error when email is missing", () => {
@@ -232,12 +236,12 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "", password: "secret123", confirmPassword: "secret123" },
+                { firstName: "Jean", lastName: "Dupont", email: "", password: SAISIE_FORMULAIRE, confirmPassword: SAISIE_FORMULAIRE },
                 getByPlaceholderText,
                 getByText
             );
 
-            expect(getByText("All fields are required.")).toBeTruthy();
+            expect(getByText("Tous les champs sont obligatoires.")).toBeTruthy();
         });
 
         it("should show error when password is missing", () => {
@@ -246,12 +250,12 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "user@example.com", password: "", confirmPassword: "" },
+                { firstName: "Jean", lastName: "Dupont", email: "utilisateur@exemple.com", password: "", confirmPassword: "" },
                 getByPlaceholderText,
                 getByText
             );
 
-            expect(getByText("All fields are required.")).toBeTruthy();
+            expect(getByText("Tous les champs sont obligatoires.")).toBeTruthy();
         });
 
         it("should show error when passwords do not match", () => {
@@ -261,15 +265,17 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             fillAndSubmit(
                 {
-                    email: "user@example.com",
-                    password: "secret123",
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
                     confirmPassword: "different",
                 },
                 getByPlaceholderText,
                 getByText
             );
 
-            expect(getByText("Passwords do not match.")).toBeTruthy();
+            expect(getByText("Les mots de passe ne correspondent pas.")).toBeTruthy();
         });
 
         it("should show error when password is shorter than 6 characters", () => {
@@ -278,13 +284,13 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { email: "user@example.com", password: "abc", confirmPassword: "abc" },
+                { firstName: "Jean", lastName: "Dupont", email: "utilisateur@exemple.com", password: "abc", confirmPassword: "abc" },
                 getByPlaceholderText,
                 getByText
             );
 
             expect(
-                getByText("Password must be at least 6 characters long.")
+                getByText("Le mot de passe doit comporter au moins 6 caractères.")
             ).toBeTruthy();
         });
 
@@ -297,23 +303,23 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            fireEvent.press(getByText("Sign Up"));
-            expect(getByText("All fields are required.")).toBeTruthy();
+            fireEvent.press(getByText("S'inscrire"));
+            expect(getByText("Tous les champs sont obligatoires.")).toBeTruthy();
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
-                expect(queryByText("All fields are required.")).toBeNull();
+                expect(queryByText("Tous les champs sont obligatoires.")).toBeNull();
             });
         });
     });
@@ -328,25 +334,27 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
                 expect(apiFetchModule.apiFetch).toHaveBeenCalledWith("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        email: "user@example.com",
-                        password: "secret123",
+                        firstName: "Jean",
+                        lastName: "Dupont",
+                        email: "utilisateur@exemple.com",
+                        password: SAISIE_FORMULAIRE,
                     }),
                 });
             });
@@ -359,22 +367,22 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
                 expect(Alert.alert).toHaveBeenCalledWith(
-                    "Success",
-                    "Account created successfully!",
+                    "Succès",
+                    "Compte créé avec succès !",
                     expect.arrayContaining([
                         expect.objectContaining({ text: "OK" }),
                     ])
@@ -390,27 +398,27 @@ describe("RegistrationScreen — Integration Tests", () => {
         it("should display API error message on failed registration (non-ok response)", async () => {
             apiFetchModule.apiFetch.mockResolvedValueOnce({
                 ok: false,
-                json: async () => ({ message: "Email already in use." }),
+                json: async () => ({ message: "Email déjà utilisé." }),
             });
 
             const { getByText, getByPlaceholderText } = render(
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "taken@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "pris@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
-                expect(getByText("Email already in use.")).toBeTruthy();
+                expect(getByText("Email déjà utilisé.")).toBeTruthy();
             });
             expect(onRegisterSuccess).not.toHaveBeenCalled();
         });
@@ -425,21 +433,21 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
                 expect(
-                    getByText("Registration failed. Please try again.")
+                    getByText("Inscription échouée. Veuillez réessayer.")
                 ).toBeTruthy();
             });
         });
@@ -451,21 +459,21 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
                 expect(
-                    getByText("An error occurred. Please check your connection.")
+                    getByText("Une erreur est survenue. Vérifiez votre connexion.")
                 ).toBeTruthy();
             });
         });
@@ -474,27 +482,27 @@ describe("RegistrationScreen — Integration Tests", () => {
     // ─── LOADING STATE ───────────────────────────────────────────────────────────
 
     describe("Loading state", () => {
-        it("should disable the Sign Up button while loading", async () => {
+        it("should disable the S'inscrire button while loading", async () => {
             apiFetchModule.apiFetch.mockReturnValueOnce(new Promise(() => { }));
 
             const { getByText, getByPlaceholderText } = render(
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
 
-            await act(async () => {
-                fillAndSubmit(
-                    {
-                        email: "user@example.com",
-                        password: "secret123",
-                        confirmPassword: "secret123",
-                    },
-                    getByPlaceholderText,
-                    getByText
-                );
-            });
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
 
             await waitFor(() => {
-                expect(() => getByText("Sign Up")).toThrow();
+                expect(() => getByText("S'inscrire")).toThrow();
             });
         });
     });
@@ -507,24 +515,24 @@ describe("RegistrationScreen — Integration Tests", () => {
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
             expect(getByTestId("header-container")).toBeTruthy();
-            expect(getByText("Create Account")).toBeTruthy();
-            expect(getByText("Join Kompagnon today")).toBeTruthy();
+            expect(getByText("Créer un compte")).toBeTruthy();
+            expect(getByText("Rejoignez Kompagnon aujourd'hui")).toBeTruthy();
         });
 
         it("should still show error container even with shake animation", () => {
             const { getByText, getByTestId } = render(
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
-            fireEvent.press(getByText("Sign Up"));
+            fireEvent.press(getByText("S'inscrire"));
             expect(getByTestId("error-container")).toBeTruthy();
-            expect(getByText("All fields are required.")).toBeTruthy();
+            expect(getByText("Tous les champs sont obligatoires.")).toBeTruthy();
         });
 
-        it("should render Sign Up button with animated wrapper", () => {
+        it("should render S'inscrire button with animated wrapper", () => {
             const { getByText } = render(
                 <RegistrationScreen onRegisterSuccess={onRegisterSuccess} />
             );
-            expect(getByText("Sign Up")).toBeTruthy();
+            expect(getByText("S'inscrire")).toBeTruthy();
         });
     });
 });
