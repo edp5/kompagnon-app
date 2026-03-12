@@ -1,0 +1,11 @@
+version: 2
+
+ignore-known-secrets: true
+
+paths-ignore:
+  - "__mocks__/**"
+  - "tests/**"
+  - "**/*.test.js"
+  - "**/*.test.ts"
+  - "sample.env"
+  - ".env.example"
