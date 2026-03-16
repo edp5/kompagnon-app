@@ -116,7 +116,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
     setLoading(true);
 
     try {
-      const response = await apiFetch("/api/register", {
+      const response = await apiFetch("/api/authentication/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
