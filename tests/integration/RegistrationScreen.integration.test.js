@@ -347,7 +347,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             await waitFor(() => {
-                expect(apiFetchModule.apiFetch).toHaveBeenCalledWith("/api/register", {
+                expect(apiFetchModule.apiFetch).toHaveBeenCalledWith("/api/authentication/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
