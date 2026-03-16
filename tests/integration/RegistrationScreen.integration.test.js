@@ -360,7 +360,6 @@ describe("RegistrationScreen — Integration Tests", () => {
                         lastname: "Dupont",
                         email: "utilisateur@exemple.com",
                         password: SAISIE_FORMULAIRE,
-                        userType: "user",
                         birthday: SAISIE_DATE,
                     }),
                 });

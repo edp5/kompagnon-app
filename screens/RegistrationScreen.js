@@ -122,7 +122,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ firstname: firstName, lastname: lastName, email, password, userType: "user", birthday }),
+        body: JSON.stringify({ firstname: firstName, lastname: lastName, email, password, birthday }),
       });
 
       if (response && response.ok) {
