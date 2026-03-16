@@ -22,6 +22,7 @@ const SAISIE_FAIBLE = "aaaaaaaa";
 const SAISIE_MOYENNE = "aaaaa1";
 const SAISIE_FORTE = "aaa1@aaaaaa";
 const SAISIE_FORMULAIRE = "mdptest1234";
+const SAISIE_DATE = "01/01/2000";
 
 describe("RegistrationScreen — Integration Tests", () => {
     let onRegisterSuccess;
@@ -39,12 +40,13 @@ describe("RegistrationScreen — Integration Tests", () => {
     // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
     function fillAndSubmit(
-        { firstName, lastName, email, password, confirmPassword },
+        { firstName, lastName, birthday, email, password, confirmPassword },
         getByPlaceholderText,
         getByText
     ) {
         if (firstName !== undefined) fireEvent.changeText(getByPlaceholderText("Jean"), firstName);
         if (lastName !== undefined) fireEvent.changeText(getByPlaceholderText("Dupont"), lastName);
+        if (birthday !== undefined) fireEvent.changeText(getByPlaceholderText("JJ/MM/AAAA"), birthday);
         fireEvent.changeText(getByPlaceholderText("bonjour@exemple.com"), email ?? "");
         fireEvent.changeText(getByPlaceholderText("Min. 6 caractères"), password ?? "");
         fireEvent.changeText(
@@ -236,7 +238,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { firstName: "Jean", lastName: "Dupont", email: "", password: SAISIE_FORMULAIRE, confirmPassword: SAISIE_FORMULAIRE },
+                { firstName: "Jean", lastName: "Dupont", birthday: SAISIE_DATE, email: "", password: SAISIE_FORMULAIRE, confirmPassword: SAISIE_FORMULAIRE },
                 getByPlaceholderText,
                 getByText
             );
@@ -250,7 +252,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { firstName: "Jean", lastName: "Dupont", email: "utilisateur@exemple.com", password: "", confirmPassword: "" },
+                { firstName: "Jean", lastName: "Dupont", birthday: SAISIE_DATE, email: "utilisateur@exemple.com", password: "", confirmPassword: "" },
                 getByPlaceholderText,
                 getByText
             );
@@ -267,6 +269,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: "different",
@@ -284,7 +287,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             );
 
             fillAndSubmit(
-                { firstName: "Jean", lastName: "Dupont", email: "utilisateur@exemple.com", password: "abc", confirmPassword: "abc" },
+                { firstName: "Jean", lastName: "Dupont", birthday: SAISIE_DATE, email: "utilisateur@exemple.com", password: "abc", confirmPassword: "abc" },
                 getByPlaceholderText,
                 getByText
             );
@@ -310,6 +313,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -338,6 +342,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -351,10 +356,12 @@ describe("RegistrationScreen — Integration Tests", () => {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        firstName: "Jean",
-                        lastName: "Dupont",
+                        firstname: "Jean",
+                        lastname: "Dupont",
                         email: "utilisateur@exemple.com",
                         password: SAISIE_FORMULAIRE,
+                        userType: "user",
+                        birthday: SAISIE_DATE,
                     }),
                 });
             });
@@ -371,6 +378,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -409,6 +417,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "pris@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -437,6 +446,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -463,6 +473,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,
@@ -493,6 +504,7 @@ describe("RegistrationScreen — Integration Tests", () => {
                 {
                     firstName: "Jean",
                     lastName: "Dupont",
+                    birthday: SAISIE_DATE,
                     email: "utilisateur@exemple.com",
                     password: SAISIE_FORMULAIRE,
                     confirmPassword: SAISIE_FORMULAIRE,

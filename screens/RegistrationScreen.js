@@ -24,6 +24,7 @@ export { getPasswordStrength };
 export default function RegistrationScreen({ onRegisterSuccess }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -98,7 +99,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
   const handleRegister = async () => {
     setErrorWithShake(null);
 
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !birthday || !email || !password || !confirmPassword) {
       setErrorWithShake("Tous les champs sont obligatoires.");
       return;
     }
@@ -121,7 +122,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstname: firstName, lastname: lastName, email, password, userType: "user", birthday }),
       });
 
       if (response && response.ok) {
@@ -206,6 +207,21 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                 onChangeText={setLastName}
                 testID="lastName-input"
                 accessibilityLabel="Nom"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Date de naissance</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="JJ/MM/AAAA"
+                placeholderTextColor="#999"
+                value={birthday}
+                onChangeText={setBirthday}
+                keyboardType="numeric"
+                testID="birthday-input"
+                accessibilityLabel="Date de naissance"
+                accessibilityHint="Format JJ/MM/AAAA"
               />
             </View>
 
