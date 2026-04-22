@@ -24,7 +24,7 @@
   },
   "type": "module",
   "dependencies": {
-    "expo": "~55.0.15",
+    "expo": "~55.0.16",
     "dotenv": "^17.4.2",
     "expo-env": "^1.1.1",
     "expo-status-bar": "~55.0.5",
