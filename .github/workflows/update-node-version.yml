@@ -1,0 +1,19 @@
+name: update-node-version
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+  update-node:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: edp5/edp5-actions/update-node-version@v1.4.0
+        with:
+          token: ${{ secrets.SERVICE_TOKEN }}
