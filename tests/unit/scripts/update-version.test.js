@@ -76,7 +76,7 @@ describe("Unit | Scripts | Update version", () => {
     expect(input.version).toBe("0.2.0");
   });
 
-  test("when executed it updates ./app.json and ./config.json and logs progress", () => {
+  test("when executed it updates ./app.json and logs progress", () => {
     // prepare package.json, app.json, config.json responses
     const pkg = { version: "7.7.7" };
     const app = { version: "0.0.0", expo: { version: "0.0.0" } };
@@ -97,7 +97,7 @@ describe("Unit | Scripts | Update version", () => {
 
     // then
     expect(logSpy).toHaveBeenCalledWith("Updating ./app.json");
-    expect(logSpy).toHaveBeenCalledWith("Updating ./config.json");
+    expect(logSpy).not.toHaveBeenCalledWith("Updating ./config.json");
     expect(logSpy).toHaveBeenCalledWith("Version update complete.");
 
     expect(fs.writeFileSync).toHaveBeenCalled();
@@ -132,7 +132,7 @@ describe("Unit | Scripts | Update version", () => {
     require("../../../scripts/update-version.js");
 
     expect(logSpy).toHaveBeenCalledWith("Updating ./app.json");
-    expect(logSpy).toHaveBeenCalledWith("Updating ./config.json");
+    expect(logSpy).not.toHaveBeenCalledWith("Updating ./config.json");
     expect(logSpy).toHaveBeenCalledWith("Version update complete.");
 
     logSpy.mockRestore();

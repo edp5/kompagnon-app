@@ -1,3 +1,4 @@
+import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   StyleSheet,
@@ -7,8 +8,10 @@ import {
   View,
 } from "react-native";
 
+import { colors, fonts, radius } from "../theme/tokens";
+
 /**
- * Évalue la force d'un mot de passe.
+ * Rates the strength of a password.
  * @param {string} pwd
  * @returns {{ level: string, label: string, color: string, fraction: number }}
  */
@@ -22,26 +25,27 @@ export function getPasswordStrength(pwd) {
   const hasSpecial = /[^a-zA-Z0-9]/.test(pwd);
 
   if (pwd.length >= 10 && hasLetters && hasNumbers && hasSpecial) {
-    return { level: "strong", label: "Fort", color: "#00B894", fraction: 1 };
+    return { level: "strong", label: "Fort", color: colors.teal, fraction: 1 };
   }
   if (pwd.length >= 6 && hasLetters && hasNumbers) {
-    return { level: "fair", label: "Moyen", color: "#FDCB6E", fraction: 0.66 };
+    return { level: "fair", label: "Moyen", color: colors.warning, fraction: 0.66 };
   }
-  return { level: "weak", label: "Faible", color: "#FF7675", fraction: 0.33 };
+  return { level: "weak", label: "Faible", color: colors.danger, fraction: 0.33 };
 }
 
 /**
- * Champ de saisie de mot de passe avec toggle de visibilité et barre de force optionnelle.
+ * Kompagnon-styled password field: "pill" control, lock icon, circular
+ * visibility toggle and an optional strength bar.
  *
  * @param {object} props
- * @param {string}   props.label          - Étiquette affichée au-dessus du champ
- * @param {string}   props.value          - Valeur courante
- * @param {Function} props.onChangeText   - Callback de changement de texte
- * @param {string}   props.placeholder    - Texte indicatif
- * @param {string}   [props.hint]         - Indice d'accessibilité (ex: règles du mot de passe)
- * @param {string}   props.testID         - testID du TextInput
- * @param {string}   props.toggleTestID   - testID du bouton de visibilité
- * @param {boolean}  [props.showStrength] - Affiche la barre de force si true
+ * @param {string}   props.label          - Label shown above the field
+ * @param {string}   props.value          - Current value
+ * @param {Function} props.onChangeText   - Text change callback
+ * @param {string}   props.placeholder    - Placeholder text
+ * @param {string}   [props.hint]         - Accessibility hint (e.g. password rules)
+ * @param {string}   props.testID         - TextInput testID
+ * @param {string}   props.toggleTestID   - Visibility toggle testID
+ * @param {boolean}  [props.showStrength] - Show the strength bar when true
  */
 export default function PasswordInput({
   label,
@@ -54,19 +58,23 @@ export default function PasswordInput({
   showStrength = false,
 }) {
   const [visible, setVisible] = useState(false);
+  const [focused, setFocused] = useState(false);
   const strength = showStrength ? getPasswordStrength(value) : null;
 
   return (
-    <View style={styles.inputGroup}>
+    <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
 
-      <View style={styles.inputWrapper}>
+      <View style={[styles.control, focused && styles.controlFocused]}>
+        <Feather name="lock" size={18} color={colors.textLight} style={styles.leadingIcon} />
         <TextInput
-          style={styles.inputWithIcon}
+          style={styles.input}
           placeholder={placeholder}
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textLight}
           value={value}
           onChangeText={onChangeText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           secureTextEntry={!visible}
           testID={testID}
           accessibilityLabel={label}
@@ -75,7 +83,7 @@ export default function PasswordInput({
           autoCorrect={false}
         />
         <TouchableOpacity
-          style={styles.eyeButton}
+          style={styles.toggle}
           onPress={() => setVisible((v) => !v)}
           testID={toggleTestID}
           accessibilityRole="button"
@@ -86,9 +94,12 @@ export default function PasswordInput({
           }
           accessibilityState={{ expanded: visible }}
         >
-          <Text style={styles.eyeIcon} importantForAccessibility="no">
-            {visible ? "🙈" : "👁"}
-          </Text>
+          <Feather
+            name={visible ? "eye-off" : "eye"}
+            size={18}
+            color={colors.navy}
+            importantForAccessibility="no"
+          />
         </TouchableOpacity>
       </View>
 
@@ -128,56 +139,59 @@ export default function PasswordInput({
 }
 
 const styles = StyleSheet.create({
-  inputGroup: {
-    marginBottom: 20,
+  field: {
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#2D3436",
+    fontFamily: fonts.bodyBold,
+    color: colors.navy,
     marginBottom: 8,
     marginLeft: 4,
   },
-  inputWrapper: {
+  control: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.86)",
     borderWidth: 1,
-    borderColor: "#DFE6E9",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: "rgba(30, 44, 56, 0.08)",
+    borderRadius: radius.full,
+    paddingLeft: 16,
+    paddingRight: 6,
+    minHeight: 56,
   },
-  inputWithIcon: {
+  controlFocused: {
+    borderColor: "rgba(72, 175, 196, 0.4)",
+  },
+  leadingIcon: {
+    marginRight: 12,
+  },
+  input: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 14,
     fontSize: 16,
-    color: "#2D3436",
+    fontFamily: fonts.body,
+    color: colors.navy,
   },
-  eyeButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  toggle: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 44,
-    minHeight: 44,
-  },
-  eyeIcon: {
-    fontSize: 18,
+    backgroundColor: "rgba(30, 44, 56, 0.06)",
   },
   strengthContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 8,
+    marginLeft: 4,
     gap: 8,
   },
   strengthBarBackground: {
     flex: 1,
     height: 5,
-    backgroundColor: "#DFE6E9",
+    backgroundColor: colors.beige,
     borderRadius: 3,
     overflow: "hidden",
   },
@@ -187,7 +201,7 @@ const styles = StyleSheet.create({
   },
   strengthLabel: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: fonts.bodySemiBold,
     width: 42,
     textAlign: "right",
   },
