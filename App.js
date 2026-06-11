@@ -12,13 +12,16 @@ import {
 } from "@expo-google-fonts/nunito";
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import ApiUnavailable from "./components/ApiUnavailable";
 import HomeScreen from "./screens/HomeScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
 import { colors } from "./theme/tokens";
+import { checkHealth } from "./utils/api-fetch";
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +51,32 @@ export default function App() {
     DMSans_700Bold,
   });
 
+  // Gate the app on the API health: the auth screens are only shown when the
+  // backend answers. Otherwise an error message is displayed.
+  const [apiStatus, setApiStatus] = useState("loading"); // "loading" | "ready" | "error"
+
+  const refreshApiStatus = useCallback(async () => {
+    setApiStatus("loading");
+    const healthy = await checkHealth();
+    setApiStatus(healthy ? "ready" : "error");
+  }, []);
+
+  useEffect(() => {
+    refreshApiStatus();
+  }, [refreshApiStatus]);
+
+  if (apiStatus === "loading") {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator color={colors.teal} />
+      </View>
+    );
+  }
+
+  if (apiStatus === "error") {
+    return <ApiUnavailable onRetry={refreshApiStatus} />;
+  }
+
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={navTheme}>
@@ -63,3 +92,12 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

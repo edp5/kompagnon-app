@@ -1,9 +1,10 @@
 import { render } from "@testing-library/react-native";
 
 import App from "../App.js";
+import { checkHealth } from "../utils/api-fetch";
 
-// Mock the screens so this suite only verifies the navigator wiring
-// (initial route), not each screen's own behaviour.
+// Mock the screens so this suite only verifies the app shell: the API health
+// gate and the navigator's initial route.
 jest.mock("../screens/RegistrationScreen", () => {
   const { Text } = require("react-native");
   const Screen = () => <Text>REGISTER_SCREEN</Text>;
@@ -23,10 +24,28 @@ jest.mock("../screens/HomeScreen", () => {
   return Screen;
 });
 
-describe("App", () => {
-  it("should render the navigation container with Register as the initial route", () => {
-    const { getByText } = render(<App />);
+jest.mock("../utils/api-fetch", () => ({
+  checkHealth: jest.fn(),
+}));
 
-    expect(getByText("REGISTER_SCREEN")).toBeTruthy();
+describe("App", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("shows the auth flow when the API is healthy", async () => {
+    checkHealth.mockResolvedValue(true);
+
+    const { findByText } = render(<App />);
+
+    expect(await findByText("REGISTER_SCREEN")).toBeTruthy();
+  });
+
+  it("shows an error message when the API is unavailable", async () => {
+    checkHealth.mockResolvedValue(false);
+
+    const { findByText } = render(<App />);
+
+    expect(await findByText("Service indisponible")).toBeTruthy();
   });
 });
