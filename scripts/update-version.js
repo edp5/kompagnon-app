@@ -31,7 +31,7 @@ if (isMain) {
 }
 
 function runUpdateFromPackage() {
-  const FILE_TO_UPDATE = ["./app.json", "./config.json"];
+  const FILE_TO_UPDATE = ["./app.json"];
   const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
   const version = pkg.version;
   for (const filePath of FILE_TO_UPDATE) {

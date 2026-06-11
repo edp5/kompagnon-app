@@ -1,27 +1,75 @@
+import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
+import logo from "../assets/kompagnon-logo.png";
+import BrandInput from "../components/BrandInput";
 import PasswordInput, { getPasswordStrength } from "../components/PasswordInput";
+import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { apiFetch } from "../utils/api-fetch";
 
 // Re-export for backward compatibility with existing tests
 export { getPasswordStrength };
 
-export default function RegistrationScreen({ onRegisterSuccess }) {
+/**
+ * Formats a date as a "JJ/MM/AAAA" mask while typing: keeps only digits
+ * (max 8) and inserts the slashes automatically. Handles backspace naturally
+ * (the slashes are recomputed on each keystroke).
+ * @param {string} value
+ * @returns {string} the masked value
+ */
+export function formatBirthdayInput(value) {
+  const digits = (value || "").replace(/\D/g, "").slice(0, 8);
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)]
+    .filter(Boolean)
+    .join("/");
+}
+
+/**
+ * Converts a "JJ/MM/AAAA" input into the ISO "AAAA-MM-JJ" format the API
+ * expects (the web already sends ISO via <input type="date">).
+ * @param {string} value
+ * @returns {string|null} the ISO date, or null if the input is invalid
+ */
+export function toIsoDate(value) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((value || "").trim());
+  if (!match) return null;
+
+  const [, dd, mm, yyyy] = match;
+  const day = Number(dd);
+  const month = Number(mm);
+  const year = Number(yyyy);
+
+  // Validate that the date actually exists (e.g. reject 31/02).
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export default function RegistrationScreen() {
+  const navigation = useNavigation();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -114,6 +162,12 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
       return;
     }
 
+    const isoBirthday = toIsoDate(birthday);
+    if (!isoBirthday) {
+      setErrorWithShake("Date de naissance invalide. Utilisez le format JJ/MM/AAAA.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -122,13 +176,15 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ firstname: firstName, lastname: lastName, email, password, birthday }),
+        body: JSON.stringify({ firstname: firstName, lastname: lastName, email, password, birthday: isoBirthday }),
       });
 
       if (response && response.ok) {
         Alert.alert("Succès", "Compte créé avec succès !", [
-          { text: "OK", onPress: () => onRegisterSuccess && onRegisterSuccess() },
+          { text: "OK", onPress: () => navigation.navigate("Login") },
         ]);
+      } else if (response && response.status === 409) {
+        setErrorWithShake("Cet email est déjà utilisé.");
       } else {
         const data = await response.json();
         setErrorWithShake(data.message || "Inscription échouée. Veuillez réessayer.");
@@ -150,7 +206,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
         style={styles.keyboardAvoidingView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* En-tête animé */}
+          {/* Animated header */}
           <Animated.View
             style={[
               styles.headerContainer,
@@ -161,14 +217,13 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
             ]}
             testID="header-container"
           >
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>K</Text>
-            </View>
+            <Image source={logo} style={styles.logo} resizeMode="cover" accessibilityRole="image" accessibilityLabel="Logo Kompagnon" />
+            <Text style={styles.kicker}>KOMPAGNON</Text>
             <Text style={styles.title}>Créer un compte</Text>
             <Text style={styles.subtitle}>Rejoignez Kompagnon aujourd'hui</Text>
           </Animated.View>
 
-          {/* Formulaire animé */}
+          {/* Animated form */}
           <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
             {error && (
               <Animated.View
@@ -184,61 +239,50 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
               </Animated.View>
             )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Prénom</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Jean"
-                placeholderTextColor="#999"
-                value={firstName}
-                onChangeText={setFirstName}
-                testID="firstName-input"
-                accessibilityLabel="Prénom"
-              />
-            </View>
+            <BrandInput
+              label="Prénom"
+              icon="user"
+              placeholder="Jean"
+              value={firstName}
+              onChangeText={setFirstName}
+              testID="firstName-input"
+              accessibilityLabel="Prénom"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Nom</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Dupont"
-                placeholderTextColor="#999"
-                value={lastName}
-                onChangeText={setLastName}
-                testID="lastName-input"
-                accessibilityLabel="Nom"
-              />
-            </View>
+            <BrandInput
+              label="Nom"
+              icon="user"
+              placeholder="Dupont"
+              value={lastName}
+              onChangeText={setLastName}
+              testID="lastName-input"
+              accessibilityLabel="Nom"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Date de naissance</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="JJ/MM/AAAA"
-                placeholderTextColor="#999"
-                value={birthday}
-                onChangeText={setBirthday}
-                keyboardType="numeric"
-                testID="birthday-input"
-                accessibilityLabel="Date de naissance"
-                accessibilityHint="Format JJ/MM/AAAA"
-              />
-            </View>
+            <BrandInput
+              label="Date de naissance"
+              icon="calendar"
+              placeholder="JJ/MM/AAAA"
+              value={birthday}
+              onChangeText={(text) => setBirthday(formatBirthdayInput(text))}
+              keyboardType="numeric"
+              maxLength={10}
+              testID="birthday-input"
+              accessibilityLabel="Date de naissance"
+              accessibilityHint="Format JJ/MM/AAAA, les barres obliques sont ajoutées automatiquement"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="bonjour@exemple.com"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                accessibilityLabel="Adresse email"
-              />
-            </View>
+            <BrandInput
+              label="Email"
+              icon="mail"
+              placeholder="bonjour@exemple.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel="Adresse email"
+            />
 
             <PasswordInput
               label="Mot de passe"
@@ -260,7 +304,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
               toggleTestID="toggle-confirm-password-visibility"
             />
 
-            {/* Bouton d'inscription animé */}
+            {/* Animated submit button */}
             <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
               <TouchableOpacity
                 style={[styles.button, loading && styles.buttonDisabled]}
@@ -274,7 +318,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
                 accessibilityState={{ disabled: loading }}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" accessibilityLabel="Chargement…" />
+                  <ActivityIndicator color={colors.textOnDark} accessibilityLabel="Chargement…" />
                 ) : (
                   <Text style={styles.buttonText}>S'inscrire</Text>
                 )}
@@ -283,7 +327,10 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 
             <View style={styles.loginLinkContainer}>
               <Text style={styles.loginLinkText}>Déjà un compte ? </Text>
-              <TouchableOpacity accessibilityRole="button">
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => navigation.navigate("Login")}
+              >
                 <Text style={styles.loginLinkHighlight}>Se connecter</Text>
               </TouchableOpacity>
             </View>
@@ -297,7 +344,7 @@ export default function RegistrationScreen({ onRegisterSuccess }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.bg,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -310,98 +357,67 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 32,
     marginTop: 20,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    backgroundColor: "#2D3436",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+  logo: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.xl,
+    marginBottom: 16,
+    ...shadow.card,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: "bold",
-    color: "#fff",
+  kicker: {
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 1.5,
+    color: colors.tealDark,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
-    color: "#2D3436",
-    marginBottom: 8,
+    fontFamily: fonts.displayBlack,
+    color: colors.navy,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#636E72",
+    fontSize: 15,
+    fontFamily: fonts.body,
+    color: colors.textMedium,
   },
   formContainer: {
     width: "100%",
   },
   errorContainer: {
-    backgroundColor: "#FFE5E5",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: colors.dangerBg,
+    padding: 14,
+    borderRadius: radius.md,
     marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: "#FF7675",
+    borderWidth: 1.5,
+    borderColor: colors.dangerBorder,
   },
   errorText: {
-    color: "#D63031",
+    color: colors.danger,
     fontSize: 14,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2D3436",
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#DFE6E9",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#2D3436",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    fontFamily: fonts.bodyMedium,
   },
   button: {
-    backgroundColor: "#0984E3",
+    backgroundColor: colors.teal,
     paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: radius.full,
     alignItems: "center",
-    marginTop: 10,
-    shadowColor: "#0984E3",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: 12,
+    ...shadow.teal,
   },
   buttonDisabled: {
-    backgroundColor: "#74B9FF",
-    opacity: 0.7,
+    opacity: 0.6,
   },
   buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    color: colors.textOnDark,
+    fontSize: 17,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 0.3,
   },
   loginLinkContainer: {
     flexDirection: "row",
@@ -409,12 +425,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   loginLinkText: {
-    color: "#636E72",
+    color: colors.textMedium,
     fontSize: 14,
+    fontFamily: fonts.body,
   },
   loginLinkHighlight: {
-    color: "#0984E3",
+    color: colors.tealDark,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: fonts.bodyBold,
   },
 });

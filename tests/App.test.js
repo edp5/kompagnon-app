@@ -1,54 +1,32 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { render } from "@testing-library/react-native";
 
 import App from "../App.js";
-import * as apiFetchModule from "../utils/api-fetch.js";
 
-
+// Mock the screens so this suite only verifies the navigator wiring
+// (initial route), not each screen's own behaviour.
 jest.mock("../screens/RegistrationScreen", () => {
-  const { View, Button } = require("react-native");
-  const MockRegistrationScreen = ({ onRegisterSuccess }) => (
-    <View>
-      <Button title="Mock Register" onPress={onRegisterSuccess} />
-    </View>
-  );
-  MockRegistrationScreen.displayName = "MockRegistrationScreen";
-  return MockRegistrationScreen;
+  const { Text } = require("react-native");
+  const Screen = () => <Text>REGISTER_SCREEN</Text>;
+  Screen.displayName = "MockRegisterScreen";
+  return Screen;
+});
+jest.mock("../screens/LoginScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>LOGIN_SCREEN</Text>;
+  Screen.displayName = "MockLoginScreen";
+  return Screen;
+});
+jest.mock("../screens/HomeScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>HOME_SCREEN</Text>;
+  Screen.displayName = "MockHomeScreen";
+  return Screen;
 });
 
 describe("App", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+  it("should render the navigation container with Register as the initial route", () => {
+    const { getByText } = render(<App />);
 
-  describe("when api is not active", () => {
-    it("should display text", async () => {
-      // given
-      jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 500 });
-
-      // when
-      const { getByText, findByText } = render(<App />);
-      fireEvent.press(getByText("Mock Register"));
-
-      // then
-      const textElement = await findByText("API is not active");
-
-      expect(textElement).toBeTruthy();
-    });
-  });
-
-  describe("when api is active", () => {
-    it("should display hello world message", async () => {
-      // given
-      jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 200 });
-
-      // when
-      const { getByText, findByText } = render(<App />);
-      fireEvent.press(getByText("Mock Register"));
-
-      // then
-      const textElement = await findByText("Hello, World!");
-      expect(textElement).toBeTruthy();
-
-    });
+    expect(getByText("REGISTER_SCREEN")).toBeTruthy();
   });
 });
