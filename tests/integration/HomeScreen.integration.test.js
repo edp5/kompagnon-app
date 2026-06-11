@@ -1,14 +1,10 @@
 import { fireEvent, render } from "@testing-library/react-native";
 
 import HomeScreen from "../../screens/HomeScreen";
-import * as apiFetchModule from "../../utils/api-fetch.js";
+import { checkHealth } from "../../utils/api-fetch";
 
-jest.mock("@env", () => ({
-    KOMPAGNON_API_URL: "http://localhost:3000",
-}));
-
-jest.mock("../../utils/api-fetch.js", () => ({
-    apiFetch: jest.fn(),
+jest.mock("../../utils/api-fetch", () => ({
+    checkHealth: jest.fn(),
 }));
 
 const mockReset = jest.fn();
@@ -19,10 +15,11 @@ jest.mock("@react-navigation/native", () => ({
 describe("HomeScreen — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        checkHealth.mockResolvedValue(false);
     });
 
-    it("should show 'API connectée' when the health check returns 200", async () => {
-        apiFetchModule.apiFetch.mockResolvedValueOnce({ status: 200 });
+    it("should show 'API connectée' when the health check passes", async () => {
+        checkHealth.mockResolvedValueOnce(true);
 
         const { findByText } = render(<HomeScreen />);
 
@@ -30,15 +27,7 @@ describe("HomeScreen — Integration Tests", () => {
     });
 
     it("should show 'API injoignable' when the health check fails", async () => {
-        apiFetchModule.apiFetch.mockResolvedValueOnce({ status: 500 });
-
-        const { findByText } = render(<HomeScreen />);
-
-        expect(await findByText("API injoignable")).toBeTruthy();
-    });
-
-    it("should show 'API injoignable' when the health check throws", async () => {
-        apiFetchModule.apiFetch.mockRejectedValueOnce(new Error("network down"));
+        checkHealth.mockResolvedValueOnce(false);
 
         const { findByText } = render(<HomeScreen />);
 
@@ -46,8 +35,6 @@ describe("HomeScreen — Integration Tests", () => {
     });
 
     it("should reset navigation to Login on logout", () => {
-        apiFetchModule.apiFetch.mockResolvedValueOnce({ status: 200 });
-
         const { getByText } = render(<HomeScreen />);
         fireEvent.press(getByText("Se déconnecter"));
 

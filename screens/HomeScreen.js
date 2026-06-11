@@ -13,7 +13,7 @@ import {
 
 import logo from "../assets/kompagnon-logo.png";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
-import { apiFetch } from "../utils/api-fetch";
+import { checkHealth } from "../utils/api-fetch";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -22,18 +22,12 @@ export default function HomeScreen() {
   useEffect(() => {
     let mounted = true;
 
-    async function doCheck() {
-      try {
-        const request = await apiFetch("/api/health");
-        if (mounted && request && request.status === 200) {
-          setApiIsActive(true);
-        }
-      } catch (err) {
-        console.warn("Health check failed", err);
+    checkHealth().then((healthy) => {
+      if (mounted) {
+        setApiIsActive(healthy);
       }
-    }
+    });
 
-    doCheck();
     return () => { mounted = false; };
   }, []);
 
