@@ -18,7 +18,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import ApiUnavailable from "./components/ApiUnavailable";
 import HomeScreen from "./screens/HomeScreen";
+import JourneyDetailScreen from "./screens/JourneyDetailScreen";
+import JourneysScreen from "./screens/JourneysScreen";
 import LoginScreen from "./screens/LoginScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
 import { colors } from "./theme/tokens";
@@ -98,6 +101,9 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="RecordJourney" component={RecordJourneyScreen} />
+          <Stack.Screen name="Journeys" component={JourneysScreen} />
+          <Stack.Screen name="JourneyDetail" component={JourneyDetailScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
