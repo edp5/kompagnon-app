@@ -1,15 +1,21 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import HomeScreen from "../../screens/HomeScreen";
 import { checkHealth } from "../../utils/api-fetch";
+import { clearSession } from "../../utils/session";
 
 jest.mock("../../utils/api-fetch", () => ({
     checkHealth: jest.fn(),
 }));
 
+jest.mock("../../utils/session", () => ({
+    clearSession: jest.fn(),
+}));
+
 const mockReset = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ reset: mockReset }),
+    useNavigation: () => ({ reset: mockReset, navigate: mockNavigate }),
 }));
 
 describe("HomeScreen — Integration Tests", () => {
@@ -34,10 +40,20 @@ describe("HomeScreen — Integration Tests", () => {
         expect(await findByText("API injoignable")).toBeTruthy();
     });
 
-    it("should reset navigation to Login on logout", () => {
+    it("should clear the session and reset navigation to Login on logout", async () => {
         const { getByText } = render(<HomeScreen />);
         fireEvent.press(getByText("Se déconnecter"));
 
-        expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Login" }] });
+        await waitFor(() => {
+            expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Login" }] });
+        });
+        expect(clearSession).toHaveBeenCalled();
+    });
+
+    it("should navigate to the journey screen from the main action", () => {
+        const { getByText } = render(<HomeScreen />);
+        fireEvent.press(getByText("Demander un accompagnement"));
+
+        expect(mockNavigate).toHaveBeenCalledWith("RecordJourney");
     });
 });

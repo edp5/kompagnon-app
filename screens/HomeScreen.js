@@ -14,6 +14,7 @@ import {
 import logo from "../assets/kompagnon-logo.png";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { checkHealth } from "../utils/api-fetch";
+import { clearSession } from "../utils/session";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -31,7 +32,8 @@ export default function HomeScreen() {
     return () => { mounted = false; };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await clearSession();
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   };
 
@@ -57,6 +59,16 @@ export default function HomeScreen() {
             {apiIsActive ? "API connectée" : "API injoignable"}
           </Text>
         </View>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => navigation.navigate("RecordJourney")}
+          accessibilityRole="button"
+          accessibilityLabel="Demander un accompagnement"
+        >
+          <Feather name="navigation" size={18} color={colors.textOnDark} />
+          <Text style={styles.primaryButtonText}>Demander un accompagnement</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.logoutButton}
@@ -122,6 +134,24 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 13,
     fontFamily: fonts.bodySemiBold,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    alignSelf: "stretch",
+    paddingVertical: 18,
+    borderRadius: radius.full,
+    backgroundColor: colors.teal,
+    marginBottom: 16,
+    ...shadow.teal,
+  },
+  primaryButtonText: {
+    color: colors.textOnDark,
+    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 0.3,
   },
   logoutButton: {
     paddingVertical: 14,

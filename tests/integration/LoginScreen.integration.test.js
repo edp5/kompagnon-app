@@ -2,6 +2,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import LoginScreen from "../../screens/LoginScreen";
 import * as apiFetchModule from "../../utils/api-fetch.js";
+import { saveSession } from "../../utils/session";
 
 jest.mock("@env", () => ({
     KOMPAGNON_API_URL: "http://localhost:3000",
@@ -9,6 +10,10 @@ jest.mock("@env", () => ({
 
 jest.mock("../../utils/api-fetch.js", () => ({
     apiFetch: jest.fn(),
+}));
+
+jest.mock("../../utils/session", () => ({
+    saveSession: jest.fn(),
 }));
 
 const mockNavigate = jest.fn();
@@ -79,6 +84,7 @@ describe("LoginScreen — Integration Tests", () => {
                 routes: [{ name: "Home", params: { userId: 42 } }],
             });
         });
+        expect(saveSession).toHaveBeenCalledWith({ token: "jwt", userId: 42 });
     });
 
     it("should show 'Identifiants incorrects.' on 401", async () => {
