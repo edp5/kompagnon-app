@@ -20,6 +20,7 @@ import BrandInput from "../components/BrandInput";
 import PasswordInput from "../components/PasswordInput";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { apiFetch } from "../utils/api-fetch";
+import { saveSession } from "../utils/session";
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -68,6 +69,7 @@ export default function LoginScreen() {
 
       if (response && response.ok) {
         const payload = await response.json();
+        await saveSession({ token: payload?.data?.token, userId: payload?.data?.userId });
         navigation.reset({
           index: 0,
           routes: [{ name: "Home", params: { userId: payload?.data?.userId } }],

@@ -21,6 +21,24 @@ jest.mock("@expo/vector-icons", () => {
   );
 });
 
+// expo-secure-store → in-memory store (no native keychain).
+jest.mock("expo-secure-store", () => {
+  const store = new Map();
+  return {
+    setItemAsync: jest.fn(async (key, value) => { store.set(key, value); }),
+    getItemAsync: jest.fn(async (key) => (store.has(key) ? store.get(key) : null)),
+    deleteItemAsync: jest.fn(async (key) => { store.delete(key); }),
+  };
+});
+
+// expo-location → no-op defaults (individual tests override the return values).
+jest.mock("expo-location", () => ({
+  requestForegroundPermissionsAsync: jest.fn(async () => ({ status: "granted" })),
+  getCurrentPositionAsync: jest.fn(async () => ({ coords: { latitude: 0, longitude: 0 } })),
+  reverseGeocodeAsync: jest.fn(async () => []),
+  geocodeAsync: jest.fn(async () => []),
+}));
+
 // expo-font → behave as if fonts are already loaded.
 jest.mock("expo-font", () => ({
   useFonts: () => [true, null],

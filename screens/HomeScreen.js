@@ -31,17 +31,13 @@ export default function HomeScreen() {
     return () => { mounted = false; };
   }, []);
 
-  const handleLogout = () => {
-    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <View style={styles.container}>
         <Image source={logo} style={styles.logo} resizeMode="cover" accessibilityRole="image" accessibilityLabel="Logo Kompagnon" />
         <Text style={styles.title}>Bienvenue sur Kompagnon</Text>
-        <Text style={styles.subtitle}>L'accompagnement accessible, pensé pour tous.</Text>
+        <Text style={styles.subtitle}>L&apos;accompagnement accessible, pensé pour tous.</Text>
 
         <View
           style={[styles.statusPill, apiIsActive ? styles.statusOk : styles.statusDown]}
@@ -59,13 +55,36 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
+          style={styles.primaryButton}
+          onPress={() => navigation.navigate("RecordJourney")}
           accessibilityRole="button"
-          accessibilityLabel="Se déconnecter"
+          accessibilityLabel="Demander un accompagnement"
         >
-          <Text style={styles.logoutText}>Se déconnecter</Text>
+          <Feather name="navigation" size={18} color={colors.textOnDark} />
+          <Text style={styles.primaryButtonText}>Demander un accompagnement</Text>
         </TouchableOpacity>
+
+        <View style={styles.secondaryRow}>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate("Journeys")}
+            accessibilityRole="button"
+            accessibilityLabel="Mes trajets"
+          >
+            <Feather name="calendar" size={17} color={colors.navy} />
+            <Text style={styles.secondaryButtonText}>Mes trajets</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate("Profile")}
+            accessibilityRole="button"
+            accessibilityLabel="Mon profil"
+          >
+            <Feather name="user" size={17} color={colors.navy} />
+            <Text style={styles.secondaryButtonText}>Mon profil</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -123,17 +142,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.bodySemiBold,
   },
-  logoutButton: {
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    alignSelf: "stretch",
+    paddingVertical: 18,
+    borderRadius: radius.full,
+    backgroundColor: colors.teal,
+    marginBottom: 16,
+    ...shadow.teal,
+  },
+  primaryButtonText: {
+    color: colors.textOnDark,
+    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 0.3,
+  },
+  secondaryRow: {
+    flexDirection: "row",
+    alignSelf: "stretch",
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     paddingVertical: 14,
-    paddingHorizontal: 28,
     borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  logoutText: {
+  secondaryButtonText: {
     color: colors.navy,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: fonts.bodyBold,
   },
 });

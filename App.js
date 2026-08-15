@@ -18,10 +18,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import ApiUnavailable from "./components/ApiUnavailable";
 import HomeScreen from "./screens/HomeScreen";
+import JourneyDetailScreen from "./screens/JourneyDetailScreen";
+import JourneysScreen from "./screens/JourneysScreen";
 import LoginScreen from "./screens/LoginScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
 import { colors } from "./theme/tokens";
 import { checkHealth } from "./utils/api-fetch";
+import { getSession } from "./utils/session";
 
 const Stack = createNativeStackNavigator();
 
@@ -51,19 +56,27 @@ export default function App() {
     DMSans_700Bold,
   });
 
-  // Gate the app on the API health: the auth screens are only shown when the
-  // backend answers. Otherwise an error message is displayed.
+  // The app is gated on the API health: screens are only shown when the backend
+  // answers. The stored session then decides the entry screen, so a logged-in
+  // user skips the auth flow.
   const [apiStatus, setApiStatus] = useState("loading"); // "loading" | "ready" | "error"
+  const [initialRoute, setInitialRoute] = useState("Register");
 
-  const refreshApiStatus = useCallback(async () => {
+  const start = useCallback(async () => {
     setApiStatus("loading");
     const healthy = await checkHealth();
-    setApiStatus(healthy ? "ready" : "error");
+    if (!healthy) {
+      setApiStatus("error");
+      return;
+    }
+    const session = await getSession();
+    setInitialRoute(session ? "Home" : "Register");
+    setApiStatus("ready");
   }, []);
 
   useEffect(() => {
-    refreshApiStatus();
-  }, [refreshApiStatus]);
+    start();
+  }, [start]);
 
   if (apiStatus === "loading") {
     return (
@@ -74,19 +87,23 @@ export default function App() {
   }
 
   if (apiStatus === "error") {
-    return <ApiUnavailable onRetry={refreshApiStatus} />;
+    return <ApiUnavailable onRetry={start} />;
   }
 
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={navTheme}>
         <Stack.Navigator
-          initialRouteName="Register"
+          initialRouteName={initialRoute}
           screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
         >
           <Stack.Screen name="Register" component={RegistrationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="RecordJourney" component={RecordJourneyScreen} />
+          <Stack.Screen name="Journeys" component={JourneysScreen} />
+          <Stack.Screen name="JourneyDetail" component={JourneyDetailScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

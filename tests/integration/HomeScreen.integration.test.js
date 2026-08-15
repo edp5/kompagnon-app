@@ -7,9 +7,9 @@ jest.mock("../../utils/api-fetch", () => ({
     checkHealth: jest.fn(),
 }));
 
-const mockReset = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ reset: mockReset }),
+    useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
 describe("HomeScreen — Integration Tests", () => {
@@ -34,10 +34,24 @@ describe("HomeScreen — Integration Tests", () => {
         expect(await findByText("API injoignable")).toBeTruthy();
     });
 
-    it("should reset navigation to Login on logout", () => {
+    it("should navigate to the journey form from the main action", () => {
         const { getByText } = render(<HomeScreen />);
-        fireEvent.press(getByText("Se déconnecter"));
+        fireEvent.press(getByText("Demander un accompagnement"));
 
-        expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Login" }] });
+        expect(mockNavigate).toHaveBeenCalledWith("RecordJourney");
+    });
+
+    it("should navigate to the journeys list", () => {
+        const { getByText } = render(<HomeScreen />);
+        fireEvent.press(getByText("Mes trajets"));
+
+        expect(mockNavigate).toHaveBeenCalledWith("Journeys");
+    });
+
+    it("should navigate to the profile", () => {
+        const { getByText } = render(<HomeScreen />);
+        fireEvent.press(getByText("Mon profil"));
+
+        expect(mockNavigate).toHaveBeenCalledWith("Profile");
     });
 });
