@@ -1,54 +1,79 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { render } from "@testing-library/react-native";
 
 import App from "../App.js";
-import * as apiFetchModule from "../utils/api-fetch.js";
+import { checkHealth } from "../utils/api-fetch";
+import { getSession } from "../utils/session";
 
-
+// Mock the screens so this suite only verifies the app shell: the API health
+// gate and the navigator's initial route.
 jest.mock("../screens/RegistrationScreen", () => {
-  const { View, Button } = require("react-native");
-  const MockRegistrationScreen = ({ onRegisterSuccess }) => (
-    <View>
-      <Button title="Mock Register" onPress={onRegisterSuccess} />
-    </View>
-  );
-  MockRegistrationScreen.displayName = "MockRegistrationScreen";
-  return MockRegistrationScreen;
+  const { Text } = require("react-native");
+  const Screen = () => <Text>REGISTER_SCREEN</Text>;
+  Screen.displayName = "MockRegisterScreen";
+  return Screen;
+});
+jest.mock("../screens/LoginScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>LOGIN_SCREEN</Text>;
+  Screen.displayName = "MockLoginScreen";
+  return Screen;
+});
+jest.mock("../screens/HomeScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>HOME_SCREEN</Text>;
+  Screen.displayName = "MockHomeScreen";
+  return Screen;
+});
+jest.mock("../screens/RecordJourneyScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>RECORD_JOURNEY_SCREEN</Text>;
+  Screen.displayName = "MockRecordJourneyScreen";
+  return Screen;
 });
 
+jest.mock("../utils/api-fetch", () => ({
+  checkHealth: jest.fn(),
+}));
+
+jest.mock("../utils/session", () => ({
+  getSession: jest.fn(),
+}));
+
 describe("App", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    checkHealth.mockResolvedValue(true);
+    getSession.mockResolvedValue(null);
   });
 
-  describe("when api is not active", () => {
-    it("should display text", async () => {
-      // given
-      jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 500 });
+  it("shows an error message when the API is unavailable", async () => {
+    checkHealth.mockResolvedValue(false);
 
-      // when
-      const { getByText, findByText } = render(<App />);
-      fireEvent.press(getByText("Mock Register"));
+    const { findByText } = render(<App />);
 
-      // then
-      const textElement = await findByText("API is not active");
-
-      expect(textElement).toBeTruthy();
-    });
+    expect(await findByText("Service indisponible")).toBeTruthy();
   });
 
-  describe("when api is active", () => {
-    it("should display hello world message", async () => {
-      // given
-      jest.spyOn(apiFetchModule, "apiFetch").mockResolvedValue({ status: 200 });
+  it("starts on Register when the API is healthy and no session is stored", async () => {
+    const { findByText } = render(<App />);
 
-      // when
-      const { getByText, findByText } = render(<App />);
-      fireEvent.press(getByText("Mock Register"));
+    expect(await findByText("REGISTER_SCREEN")).toBeTruthy();
+  });
 
-      // then
-      const textElement = await findByText("Hello, World!");
-      expect(textElement).toBeTruthy();
+  it("starts on Home when a session is stored (auto-login)", async () => {
+    getSession.mockResolvedValue({ token: "jwt", userId: 1 });
 
-    });
+    const { findByText } = render(<App />);
+
+    expect(await findByText("HOME_SCREEN")).toBeTruthy();
+  });
+
+  it("does not read the session when the API is unavailable", async () => {
+    checkHealth.mockResolvedValue(false);
+
+    const { findByText } = render(<App />);
+    await findByText("Service indisponible");
+
+    expect(getSession).not.toHaveBeenCalled();
   });
 });

@@ -1,60 +1,119 @@
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
+import {
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+  useFonts,
+} from "@expo-google-fonts/nunito";
+import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import ApiUnavailable from "./components/ApiUnavailable";
+import HomeScreen from "./screens/HomeScreen";
+import JourneyDetailScreen from "./screens/JourneyDetailScreen";
+import JourneysScreen from "./screens/JourneysScreen";
+import LoginScreen from "./screens/LoginScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
-import { apiFetch } from "./utils/api-fetch.js";
+import { colors } from "./theme/tokens";
+import { checkHealth } from "./utils/api-fetch";
+import { getSession } from "./utils/session";
+
+const Stack = createNativeStackNavigator();
+
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.teal,
+    background: colors.bg,
+    card: colors.surface,
+    text: colors.navy,
+    border: colors.border,
+    notification: colors.teal,
+  },
+};
 
 export default function App() {
-  const [apiIsActive, setApiIsActive] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+  // Load the Kompagnon brand fonts (Nunito display + DM Sans body).
+  // Rendering is not gated on this: fonts fall back to system until ready.
+  useFonts({
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+  });
 
-  useEffect(() => {
-    let mounted = true;
+  // The app is gated on the API health: screens are only shown when the backend
+  // answers. The stored session then decides the entry screen, so a logged-in
+  // user skips the auth flow.
+  const [apiStatus, setApiStatus] = useState("loading"); // "loading" | "ready" | "error"
+  const [initialRoute, setInitialRoute] = useState("Register");
 
-    async function doCheck() {
-      try {
-        const request = await apiFetch("/api/health");
-        if (mounted && request && request.status === 200) {
-          setApiIsActive(true);
-        }
-      } catch (err) {
-        // keep apiIsActive as false; log for debugging
-        console.warn("Health check failed", err);
-      }
+  const start = useCallback(async () => {
+    setApiStatus("loading");
+    const healthy = await checkHealth();
+    if (!healthy) {
+      setApiStatus("error");
+      return;
     }
-
-    doCheck();
-    return () => { mounted = false; };
+    const session = await getSession();
+    setInitialRoute(session ? "Home" : "Register");
+    setApiStatus("ready");
   }, []);
 
-  if (!isRegistered) {
+  useEffect(() => {
+    start();
+  }, [start]);
+
+  if (apiStatus === "loading") {
     return (
-      <View style={styles.container}>
-        <RegistrationScreen onRegisterSuccess={() => setIsRegistered(true)} />
-        <StatusBar style="auto" />
+      <View style={styles.loader}>
+        <ActivityIndicator color={colors.teal} />
       </View>
     );
   }
 
+  if (apiStatus === "error") {
+    return <ApiUnavailable onRetry={start} />;
+  }
+
   return (
-    <View style={styles.container}>
-      {apiIsActive ? (
-        <>
-          <Text>Hello, World!</Text>
-          <StatusBar style="auto" />
-        </>
-      ) : (
-        <Text>API is not active</Text>
-      )}
-    </View>
+    <SafeAreaProvider>
+      <NavigationContainer theme={navTheme}>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
+        >
+          <Stack.Screen name="Register" component={RegistrationScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="RecordJourney" component={RecordJourneyScreen} />
+          <Stack.Screen name="Journeys" component={JourneysScreen} />
+          <Stack.Screen name="JourneyDetail" component={JourneyDetailScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loader: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
   },
