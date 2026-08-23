@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -26,6 +28,13 @@ export default function JourneyDetailScreen() {
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleCall = useCallback((phoneNumber) => {
+    const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Appel impossible", "Impossible de lancer l'appel depuis cet appareil.");
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,11 +157,20 @@ export default function JourneyDetailScreen() {
                   </View>
                 </View>
 
-                {match.user?.phoneNumber && (
-                  <View style={styles.contactRow}>
-                    <Feather name="phone" size={14} color={colors.tealDark} />
-                    <Text style={styles.contactText}>{match.user.phoneNumber}</Text>
-                  </View>
+                {match.user?.phoneNumber ? (
+                  <TouchableOpacity
+                    style={styles.callButton}
+                    onPress={() => handleCall(match.user.phoneNumber)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Appeler ${match.user?.firstname ?? "votre binôme"}`}
+                  >
+                    <Feather name="phone" size={16} color={colors.textOnDark} />
+                    <Text style={styles.callButtonText}>Appeler</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.contactUnavailable}>
+                    Coordonnées indisponibles pour le moment.
+                  </Text>
                 )}
 
                 <View style={styles.otherTrip}>
@@ -345,19 +363,29 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     color: colors.successText,
   },
-  contactRow: {
+  callButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    backgroundColor: colors.teal,
+  },
+  callButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    color: colors.textOnDark,
+  },
+  contactUnavailable: {
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: colors.beige,
-  },
-  contactText: {
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.navy,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textLight,
   },
   otherTrip: {
     marginTop: 16,

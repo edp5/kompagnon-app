@@ -1,4 +1,5 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { Alert, Linking } from "react-native";
 
 import JourneyDetailScreen from "../../screens/JourneyDetailScreen";
 import { getJourney, getJourneyMatches } from "../../utils/journeys";
@@ -47,6 +48,8 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
         getJourney.mockResolvedValue({ success: true, journey: JOURNEY });
         getJourneyMatches.mockResolvedValue({ success: true, matches: [CONFIRMED_MATCH] });
+        jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+        jest.spyOn(Alert, "alert").mockImplementation(() => {});
     });
 
     it("shows the journey details", async () => {
@@ -58,12 +61,48 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         expect(getJourney).toHaveBeenCalledWith({ token: "jwt", journeyId: 8 });
     });
 
-    it("shows the other user of a confirmed journey", async () => {
-        const { findByText, getByText } = render(<JourneyDetailScreen />);
+    it("shows the other user of a confirmed journey without exposing the number", async () => {
+        const { findByText, getByText, queryByText } = render(<JourneyDetailScreen />);
 
         expect(await findByText("Bob Durand")).toBeTruthy();
         expect(getByText("Trajet confirmé")).toBeTruthy();
-        expect(getByText("0622222222")).toBeTruthy();
+        // The phone number must never be shown on screen (issue #110).
+        expect(queryByText("0622222222")).toBeNull();
+        expect(getByText("Appeler")).toBeTruthy();
+    });
+
+    it("launches a phone call to the pair when tapping the call button", async () => {
+        const { findByText } = render(<JourneyDetailScreen />);
+
+        fireEvent.press(await findByText("Appeler"));
+
+        expect(Linking.openURL).toHaveBeenCalledWith("tel:0622222222");
+    });
+
+    it("warns when the call cannot be launched", async () => {
+        Linking.openURL.mockRejectedValue(new Error("no dialer"));
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Appeler"));
+
+        await waitFor(() => {
+            expect(Alert.alert).toHaveBeenCalledWith(
+                "Appel impossible",
+                "Impossible de lancer l'appel depuis cet appareil.",
+            );
+        });
+    });
+
+    it("shows a fallback when the pair has no reachable number", async () => {
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{ ...CONFIRMED_MATCH, user: { firstname: "Bob", lastname: "Durand" } }],
+        });
+
+        const { findByText, queryByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Coordonnées indisponibles pour le moment.")).toBeTruthy();
+        expect(queryByText("Appeler")).toBeNull();
     });
 
     it("shows the other user's own trip", async () => {
