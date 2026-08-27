@@ -5,8 +5,10 @@ const JOURNEYS_URL = "/api/journeys";
 const SESSION_EXPIRED = "Session expirée. Reconnectez-vous.";
 const UNREACHABLE = "Une erreur est survenue. Vérifiez votre connexion.";
 
-/** A match is confirmed once both sides have accepted it. */
+/** Match statuses shared with the API (see JOURNEY_STATUS). */
 const ACCEPTED = "accepted";
+const WAITING = "waiting";
+const REJECTED = "rejected";
 
 function authHeaders(token) {
   return { Authorization: `Bearer ${token}` };
@@ -154,17 +156,68 @@ function isConfirmedMatch(match) {
 }
 
 /**
- * Upcoming journeys that are confirmed, i.e. matched with a companion (or a
- * passenger) who accepted, sorted by departure time.
+ * Describes what the user can do with a match, mirroring the web behaviour.
+ * - "actionable": the user still has to accept or reject it.
+ * - "confirmed": both sides accepted.
+ * - "awaiting-other": the user accepted and waits for the other side.
+ * @param {object} match
+ * @returns {{ status: string, actionable: boolean, confirmed: boolean, message: string|null }}
+ */
+function matchState(match) {
+  if (match?.myStatus === WAITING) {
+    return { status: "actionable", actionable: true, confirmed: false, message: null };
+  }
+  if (isConfirmedMatch(match)) {
+    return { status: "confirmed", actionable: false, confirmed: true, message: null };
+  }
+  return {
+    status: "awaiting-other",
+    actionable: false,
+    confirmed: false,
+    message: "Vous avez accepté. En attente de la réponse de l'autre personne.",
+  };
+}
+
+/**
+ * Accepts or rejects a match on behalf of the authenticated user. The API infers
+ * the side (passenger or companion) from the user's role, so the client only
+ * says whether it accepts.
+ * @param {{ token: string, foundJourneyId: number, accept: boolean }} params
+ * @returns {Promise<{ success: boolean, message?: string }>}
+ */
+async function updateFoundJourneyStatus({ token, foundJourneyId, accept }) {
+  try {
+    const response = await apiFetch(`${JOURNEYS_URL}/found/${foundJourneyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders(token) },
+      body: JSON.stringify({ updatedStatus: accept }),
+    });
+
+    if (response && response.ok) {
+      return { success: true };
+    }
+    if (response && response.status === 401) {
+      return { success: false, message: SESSION_EXPIRED };
+    }
+    return { success: false, message: "Impossible de mettre à jour la demande. Réessayez." };
+  } catch {
+    return { success: false, message: UNREACHABLE };
+  }
+}
+
+/**
+ * Upcoming journeys that have at least one live match (pending or confirmed),
+ * sorted by departure time. Each journey carries its non-declined `matches`, the
+ * `confirmedMatch` if any, and a `pendingCount` of matches awaiting the user's
+ * answer, so the list can flag journeys that need action.
  *
- * The API has no "confirmed" filter and the list only carries an `isMatched`
- * flag, which stays true while a match is still pending. Confirmation therefore
- * has to be read from each journey's matches, fetched in parallel.
+ * The list endpoint only carries an `isMatched` flag (true even while a match is
+ * pending), so the matches are fetched per journey in parallel.
  *
  * @param {{ token: string, now?: Date }} params
  * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
  */
-async function getUpcomingConfirmedJourneys({ token, now = new Date() }) {
+async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
   const result = await getJourneys({ token });
   if (!result.success) {
     return result;
@@ -177,9 +230,16 @@ async function getUpcomingConfirmedJourneys({ token, now = new Date() }) {
 
   const withMatches = await Promise.all(
     upcoming.map(async (journey) => {
-      const matches = await getJourneyMatches({ token, journeyId: journey.id });
-      const confirmed = (matches.matches ?? []).find(isConfirmedMatch);
-      return confirmed ? { ...journey, match: confirmed } : null;
+      const matchesResult = await getJourneyMatches({ token, journeyId: journey.id });
+      const matches = (matchesResult.matches ?? []).filter(
+        (match) => match?.myStatus !== REJECTED && match?.otherStatus !== REJECTED,
+      );
+      if (matches.length === 0) {
+        return null;
+      }
+      const confirmedMatch = matches.find(isConfirmedMatch) ?? null;
+      const pendingCount = matches.filter((match) => match?.myStatus === WAITING).length;
+      return { ...journey, matches, confirmedMatch, pendingCount };
     }),
   );
 
@@ -194,7 +254,9 @@ export {
   getJourney,
   getJourneyMatches,
   getJourneys,
-  getUpcomingConfirmedJourneys,
+  getUpcomingMatchedJourneys,
   isConfirmedMatch,
+  matchState,
   recordJourney,
+  updateFoundJourneyStatus,
 };

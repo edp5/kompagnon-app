@@ -3,9 +3,11 @@ import {
   getJourney,
   getJourneyMatches,
   getJourneys,
-  getUpcomingConfirmedJourneys,
+  getUpcomingMatchedJourneys,
   isConfirmedMatch,
+  matchState,
   recordJourney,
+  updateFoundJourneyStatus,
 } from "../../../utils/journeys";
 
 jest.mock("../../../utils/api-fetch", () => ({
@@ -135,7 +137,77 @@ describe("Unit | Utils | isConfirmedMatch", () => {
   });
 });
 
-describe("Unit | Utils | getUpcomingConfirmedJourneys", () => {
+describe("Unit | Utils | matchState", () => {
+  it("is actionable while the user has not answered", () => {
+    expect(matchState({ myStatus: "waiting", otherStatus: "waiting" })).toMatchObject({
+      actionable: true,
+      confirmed: false,
+    });
+    expect(matchState({ myStatus: "waiting", otherStatus: "accepted" })).toMatchObject({ actionable: true });
+  });
+
+  it("is confirmed when both sides accepted", () => {
+    expect(matchState({ myStatus: "accepted", otherStatus: "accepted" })).toMatchObject({
+      confirmed: true,
+      actionable: false,
+    });
+  });
+
+  it("waits for the other side when the user accepted first", () => {
+    const state = matchState({ myStatus: "accepted", otherStatus: "waiting" });
+    expect(state).toMatchObject({ actionable: false, confirmed: false });
+    expect(state.message).toBeTruthy();
+  });
+});
+
+describe("Unit | Utils | updateFoundJourneyStatus", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("accepts a match by putting the flag with a bearer token", async () => {
+    apiFetch.mockResolvedValue({ ok: true });
+
+    const result = await updateFoundJourneyStatus({ token: "jwt", foundJourneyId: 5, accept: true });
+
+    expect(apiFetch).toHaveBeenCalledWith("/api/journeys/found/5", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer jwt" },
+      body: JSON.stringify({ updatedStatus: true }),
+    });
+    expect(result).toEqual({ success: true });
+  });
+
+  it("sends false when rejecting", async () => {
+    apiFetch.mockResolvedValue({ ok: true });
+
+    await updateFoundJourneyStatus({ token: "jwt", foundJourneyId: 6, accept: false });
+
+    expect(apiFetch).toHaveBeenCalledWith(
+      "/api/journeys/found/6",
+      expect.objectContaining({ body: JSON.stringify({ updatedStatus: false }) }),
+    );
+  });
+
+  it("returns a session message on 401", async () => {
+    apiFetch.mockResolvedValue({ ok: false, status: 401 });
+
+    expect(await updateFoundJourneyStatus({ token: "jwt", foundJourneyId: 5, accept: true })).toEqual({
+      success: false,
+      message: "Session expirée. Reconnectez-vous.",
+    });
+  });
+
+  it("returns a generic message on other failures", async () => {
+    apiFetch.mockResolvedValue({ ok: false, status: 500 });
+
+    const result = await updateFoundJourneyStatus({ token: "jwt", foundJourneyId: 5, accept: true });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("Unit | Utils | getUpcomingMatchedJourneys", () => {
   const NOW = new Date("2026-08-13T12:00:00.000Z");
 
   const future = (id, hours) => ({
@@ -145,8 +217,9 @@ describe("Unit | Utils | getUpcomingConfirmedJourneys", () => {
     arrivalTime: new Date(NOW.getTime() + (hours + 1) * 3600000).toISOString(),
   });
 
-  const accepted = { myStatus: "accepted", otherStatus: "accepted", user: { firstname: "Bob" } };
-  const waiting = { myStatus: "waiting", otherStatus: "waiting" };
+  const accepted = { foundJourneyId: 10, myStatus: "accepted", otherStatus: "accepted", user: { firstname: "Bob" } };
+  const waiting = { foundJourneyId: 11, myStatus: "waiting", otherStatus: "waiting" };
+  const rejected = { foundJourneyId: 12, myStatus: "rejected", otherStatus: "waiting" };
 
   function mockApi({ journeys, matchesByJourneyId }) {
     apiFetch.mockImplementation(async (endpoint) => {
@@ -162,39 +235,44 @@ describe("Unit | Utils | getUpcomingConfirmedJourneys", () => {
     jest.clearAllMocks();
   });
 
-  it("keeps only journeys whose match is accepted by both sides", async () => {
+  it("keeps journeys with a confirmed or a pending match, annotated", async () => {
     mockApi({
       journeys: [future(1, 5), future(2, 8)],
       matchesByJourneyId: { 1: [accepted], 2: [waiting] },
     });
 
-    const result = await getUpcomingConfirmedJourneys({ token: "jwt", now: NOW });
+    const result = await getUpcomingMatchedJourneys({ token: "jwt", now: NOW });
 
     expect(result.success).toBe(true);
-    expect(result.journeys.map((journey) => journey.id)).toEqual([1]);
-    expect(result.journeys[0].match).toEqual(accepted);
+    expect(result.journeys.map((journey) => journey.id)).toEqual([1, 2]);
+    const [confirmed, pending] = result.journeys;
+    expect(confirmed.confirmedMatch).toEqual(accepted);
+    expect(confirmed.pendingCount).toBe(0);
+    expect(pending.confirmedMatch).toBeNull();
+    expect(pending.pendingCount).toBe(1);
   });
 
-  it("drops past journeys and journeys without a match", async () => {
+  it("drops past, unmatched, and only-declined journeys", async () => {
     const past = { ...future(3, -10), isMatched: true };
     const unmatched = { ...future(4, 6), isMatched: false };
+    const declinedOnly = { ...future(5, 7), isMatched: true };
     mockApi({
-      journeys: [past, unmatched],
-      matchesByJourneyId: { 3: [accepted], 4: [accepted] },
+      journeys: [past, unmatched, declinedOnly],
+      matchesByJourneyId: { 3: [accepted], 4: [accepted], 5: [rejected] },
     });
 
-    const result = await getUpcomingConfirmedJourneys({ token: "jwt", now: NOW });
+    const result = await getUpcomingMatchedJourneys({ token: "jwt", now: NOW });
 
     expect(result.journeys).toEqual([]);
   });
 
-  it("sorts the confirmed journeys by departure time", async () => {
+  it("sorts the journeys by departure time", async () => {
     mockApi({
       journeys: [future(1, 9), future(2, 3)],
       matchesByJourneyId: { 1: [accepted], 2: [accepted] },
     });
 
-    const result = await getUpcomingConfirmedJourneys({ token: "jwt", now: NOW });
+    const result = await getUpcomingMatchedJourneys({ token: "jwt", now: NOW });
 
     expect(result.journeys.map((journey) => journey.id)).toEqual([2, 1]);
   });
@@ -202,7 +280,7 @@ describe("Unit | Utils | getUpcomingConfirmedJourneys", () => {
   it("propagates a listing failure", async () => {
     apiFetch.mockResolvedValue({ ok: false, status: 401 });
 
-    const result = await getUpcomingConfirmedJourneys({ token: "jwt", now: NOW });
+    const result = await getUpcomingMatchedJourneys({ token: "jwt", now: NOW });
 
     expect(result.success).toBe(false);
     expect(result.message).toBe("Session expirée. Reconnectez-vous.");

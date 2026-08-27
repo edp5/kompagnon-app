@@ -14,7 +14,7 @@ import {
 
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
-import { getUpcomingConfirmedJourneys } from "../utils/journeys";
+import { getUpcomingMatchedJourneys } from "../utils/journeys";
 import { getSession } from "../utils/session";
 
 export default function JourneysScreen() {
@@ -35,7 +35,7 @@ export default function JourneysScreen() {
       return;
     }
 
-    const result = await getUpcomingConfirmedJourneys({ token: session.token });
+    const result = await getUpcomingMatchedJourneys({ token: session.token });
     if (result.success) {
       setJourneys(result.journeys);
     } else {
@@ -65,7 +65,7 @@ export default function JourneysScreen() {
             <Feather name="arrow-left" size={22} color={colors.navy} />
           </TouchableOpacity>
           <Text style={styles.title}>Mes prochains trajets</Text>
-          <Text style={styles.subtitle}>Vos accompagnements confirmés</Text>
+          <Text style={styles.subtitle}>Vos accompagnements et demandes à confirmer</Text>
         </View>
 
         {loading && (
@@ -96,9 +96,9 @@ export default function JourneysScreen() {
         {!loading && !error && journeys.length === 0 && (
           <View style={styles.emptyCard} testID="journeys-empty">
             <Feather name="calendar" size={22} color={colors.textLight} />
-            <Text style={styles.emptyTitle}>Aucun trajet confirmé</Text>
+            <Text style={styles.emptyTitle}>Aucun trajet à venir</Text>
             <Text style={styles.emptyText}>
-              Vos trajets apparaîtront ici une fois qu&apos;un accompagnement aura été confirmé.
+              Vos trajets apparaîtront ici dès qu&apos;une correspondance sera trouvée.
             </Text>
           </View>
         )}
@@ -114,10 +114,19 @@ export default function JourneysScreen() {
           >
             <View style={styles.cardTop}>
               <Text style={styles.cardDate}>{formatShortDate(journey.departureTime)}</Text>
-              <View style={styles.confirmedBadge}>
-                <Feather name="check" size={11} color={colors.successText} />
-                <Text style={styles.confirmedText}>Confirmé</Text>
-              </View>
+              {journey.confirmedMatch ? (
+                <View style={styles.confirmedBadge}>
+                  <Feather name="check" size={11} color={colors.successText} />
+                  <Text style={styles.confirmedText}>Confirmé</Text>
+                </View>
+              ) : journey.pendingCount > 0 ? (
+                <View style={styles.pendingBadge}>
+                  <Feather name="clock" size={11} color={colors.warning} />
+                  <Text style={styles.pendingText}>
+                    {journey.pendingCount} demande{journey.pendingCount > 1 ? "s" : ""}
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.leg}>
@@ -131,14 +140,19 @@ export default function JourneysScreen() {
               <Text style={styles.legTime}>{formatTime(journey.arrivalTime)}</Text>
             </View>
 
-            {journey.match?.user && (
+            {journey.confirmedMatch?.user ? (
               <View style={styles.withUser}>
                 <Feather name="user" size={13} color={colors.textMedium} />
                 <Text style={styles.withUserText}>
-                  Avec {journey.match.user.firstname} {journey.match.user.lastname}
+                  Avec {journey.confirmedMatch.user.firstname} {journey.confirmedMatch.user.lastname}
                 </Text>
               </View>
-            )}
+            ) : journey.pendingCount > 0 ? (
+              <View style={styles.withUser}>
+                <Feather name="user-check" size={13} color={colors.textMedium} />
+                <Text style={styles.withUserText}>Appuyez pour répondre à la demande</Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -262,6 +276,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.bodyBold,
     color: colors.successText,
+  },
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.full,
+    backgroundColor: colors.sand,
+  },
+  pendingText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.warning,
   },
   leg: {
     flexDirection: "row",

@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,7 +16,7 @@ import {
 
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
-import { getJourney, getJourneyMatches, isConfirmedMatch } from "../utils/journeys";
+import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
 import { getSession } from "../utils/session";
 
 export default function JourneyDetailScreen() {
@@ -23,9 +25,17 @@ export default function JourneyDetailScreen() {
   const { journeyId } = route.params ?? {};
 
   const [journey, setJourney] = useState(null);
-  const [match, setMatch] = useState(null);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [respondingId, setRespondingId] = useState(null);
+
+  const handleCall = useCallback((phoneNumber) => {
+    const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Appel impossible", "Impossible de lancer l'appel depuis cet appareil.");
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,9 +60,28 @@ export default function JourneyDetailScreen() {
     }
 
     setJourney(journeyResult.journey);
-    setMatch((matchesResult.matches ?? []).find(isConfirmedMatch) ?? null);
+    setMatches(matchesResult.matches ?? []);
     setLoading(false);
   }, [journeyId]);
+
+  const onRespond = useCallback(
+    async (foundJourneyId, accept) => {
+      const session = await getSession();
+      if (!session) {
+        setError("Votre session a expiré. Reconnectez-vous.");
+        return;
+      }
+      setRespondingId(foundJourneyId);
+      const result = await updateFoundJourneyStatus({ token: session.token, foundJourneyId, accept });
+      setRespondingId(null);
+      if (!result.success) {
+        Alert.alert("Action impossible", result.message);
+        return;
+      }
+      load();
+    },
+    [load],
+  );
 
   useEffect(() => {
     load();
@@ -127,61 +156,25 @@ export default function JourneyDetailScreen() {
               </View>
             </View>
 
-            <Text style={styles.sectionTitle}>Votre accompagnement</Text>
+            <Text style={styles.sectionTitle}>
+              {matches.length > 1 ? "Vos correspondances" : "Votre correspondance"}
+            </Text>
 
-            {match ? (
-              <View style={styles.card} testID="journey-detail-match">
-                <View style={styles.personRow}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {(match.user?.firstname?.[0] ?? "?").toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.personBody}>
-                    <Text style={styles.personName}>
-                      {match.user?.firstname} {match.user?.lastname}
-                    </Text>
-                    <View style={styles.confirmedBadge}>
-                      <Feather name="check" size={11} color={colors.successText} />
-                      <Text style={styles.confirmedText}>Trajet confirmé</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {match.user?.phoneNumber && (
-                  <View style={styles.contactRow}>
-                    <Feather name="phone" size={14} color={colors.tealDark} />
-                    <Text style={styles.contactText}>{match.user.phoneNumber}</Text>
-                  </View>
-                )}
-
-                <View style={styles.otherTrip}>
-                  <Text style={styles.otherTripTitle}>Son trajet</Text>
-                  <View style={styles.otherTripRow}>
-                    <Feather name="map-pin" size={13} color={colors.textLight} />
-                    <Text style={styles.otherTripText} numberOfLines={1}>
-                      {match.journey?.departureAddress}
-                    </Text>
-                    <Text style={styles.otherTripTime}>
-                      {formatTime(match.journey?.departureTime)}
-                    </Text>
-                  </View>
-                  <View style={styles.otherTripRow}>
-                    <Feather name="flag" size={13} color={colors.textLight} />
-                    <Text style={styles.otherTripText} numberOfLines={1}>
-                      {match.journey?.arrivalAddress}
-                    </Text>
-                    <Text style={styles.otherTripTime}>
-                      {formatTime(match.journey?.arrivalTime)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+            {matches.length > 0 ? (
+              matches.map((item) => (
+                <MatchCard
+                  key={item.foundJourneyId}
+                  match={item}
+                  responding={respondingId === item.foundJourneyId}
+                  onRespond={onRespond}
+                  onCall={handleCall}
+                />
+              ))
             ) : (
               <View style={styles.emptyCard} testID="journey-detail-no-match">
                 <Feather name="clock" size={20} color={colors.textLight} />
                 <Text style={styles.emptyText}>
-                  Ce trajet n&apos;a pas encore d&apos;accompagnement confirmé.
+                  Ce trajet n&apos;a pas encore de correspondance.
                 </Text>
               </View>
             )}
@@ -189,6 +182,106 @@ export default function JourneyDetailScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * One match on the journey details screen. Confirmed matches expose a call
+ * button; matches still awaiting the user's answer expose accept/reject buttons.
+ * @param {{ match: object, responding: boolean, onRespond: Function, onCall: Function }} props
+ */
+function MatchCard({ match, responding, onRespond, onCall }) {
+  const state = matchState(match);
+  const firstname = match.user?.firstname;
+
+  return (
+    <View style={styles.card} testID={`match-card-${match.foundJourneyId}`}>
+      <View style={styles.personRow}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{(firstname?.[0] ?? "?").toUpperCase()}</Text>
+        </View>
+        <View style={styles.personBody}>
+          <Text style={styles.personName}>
+            {firstname} {match.user?.lastname}
+          </Text>
+          {state.confirmed ? (
+            <View style={styles.confirmedBadge}>
+              <Feather name="check" size={11} color={colors.successText} />
+              <Text style={styles.confirmedText}>Trajet confirmé</Text>
+            </View>
+          ) : (
+            <View style={styles.pendingBadge}>
+              <Feather name="clock" size={11} color={colors.warning} />
+              <Text style={styles.pendingText}>
+                {state.actionable ? "À confirmer" : "En attente"}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.otherTrip}>
+        <Text style={styles.otherTripTitle}>Son trajet</Text>
+        <View style={styles.otherTripRow}>
+          <Feather name="map-pin" size={13} color={colors.textLight} />
+          <Text style={styles.otherTripText} numberOfLines={1}>
+            {match.journey?.departureAddress}
+          </Text>
+          <Text style={styles.otherTripTime}>{formatTime(match.journey?.departureTime)}</Text>
+        </View>
+        <View style={styles.otherTripRow}>
+          <Feather name="flag" size={13} color={colors.textLight} />
+          <Text style={styles.otherTripText} numberOfLines={1}>
+            {match.journey?.arrivalAddress}
+          </Text>
+          <Text style={styles.otherTripTime}>{formatTime(match.journey?.arrivalTime)}</Text>
+        </View>
+      </View>
+
+      {state.confirmed &&
+        (match.user?.phoneNumber ? (
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={() => onCall(match.user.phoneNumber)}
+            accessibilityRole="button"
+            accessibilityLabel={`Appeler ${firstname ?? "votre binôme"}`}
+          >
+            <Feather name="phone" size={16} color={colors.textOnDark} />
+            <Text style={styles.callButtonText}>Appeler</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.contactUnavailable}>Coordonnées indisponibles pour le moment.</Text>
+        ))}
+
+      {state.actionable && (
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.rejectButton, responding && styles.buttonDisabled]}
+            onPress={() => onRespond(match.foundJourneyId, false)}
+            disabled={responding}
+            accessibilityRole="button"
+            accessibilityLabel={`Refuser la demande de ${firstname ?? "cette personne"}`}
+          >
+            <Text style={styles.rejectText}>Refuser</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.acceptButton, responding && styles.buttonDisabled]}
+            onPress={() => onRespond(match.foundJourneyId, true)}
+            disabled={responding}
+            accessibilityRole="button"
+            accessibilityLabel={`Accepter la demande de ${firstname ?? "cette personne"}`}
+          >
+            {responding ? (
+              <ActivityIndicator color={colors.textOnDark} accessibilityLabel="Envoi…" />
+            ) : (
+              <Text style={styles.acceptText}>Accepter</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {state.message && <Text style={styles.awaitingText}>{state.message}</Text>}
+    </View>
   );
 }
 
@@ -345,19 +438,86 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     color: colors.successText,
   },
-  contactRow: {
+  callButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     marginTop: 16,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.beige,
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    backgroundColor: colors.teal,
   },
-  contactText: {
+  callButtonText: {
     fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.navy,
+    fontFamily: fonts.bodyBold,
+    color: colors.textOnDark,
+  },
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.full,
+    backgroundColor: colors.sand,
+  },
+  pendingText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.warning,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+  acceptButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    backgroundColor: colors.teal,
+  },
+  acceptText: {
+    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    color: colors.textOnDark,
+  },
+  rejectButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.dangerBorder,
+    backgroundColor: colors.surface,
+  },
+  rejectText: {
+    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    color: colors.danger,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  awaitingText: {
+    marginTop: 16,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textMedium,
+    lineHeight: 19,
+  },
+  contactUnavailable: {
+    marginTop: 16,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textLight,
   },
   otherTrip: {
     marginTop: 16,
