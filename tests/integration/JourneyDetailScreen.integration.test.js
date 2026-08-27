@@ -2,22 +2,27 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { Alert, Linking } from "react-native";
 
 import JourneyDetailScreen from "../../screens/JourneyDetailScreen";
-import { getJourney, getJourneyMatches } from "../../utils/journeys";
+import { getJourney, getJourneyMatches, updateFoundJourneyStatus } from "../../utils/journeys";
 import { getSession } from "../../utils/session";
 
-jest.mock("../../utils/journeys", () => ({
-    getJourney: jest.fn(),
-    getJourneyMatches: jest.fn(),
-    // Keep the real rule: confirmed means both sides accepted.
-    isConfirmedMatch: (match) => match?.myStatus === "accepted" && match?.otherStatus === "accepted",
-}));
+jest.mock("../../utils/journeys", () => {
+    const actual = jest.requireActual("../../utils/journeys");
+    return {
+        getJourney: jest.fn(),
+        getJourneyMatches: jest.fn(),
+        updateFoundJourneyStatus: jest.fn(),
+        // Keep the real state machine so the screen reacts like in production.
+        matchState: actual.matchState,
+    };
+});
 
 jest.mock("../../utils/session", () => ({
     getSession: jest.fn(),
 }));
 
+const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ goBack: jest.fn() }),
+    useNavigation: () => ({ goBack: mockGoBack }),
     useRoute: () => ({ params: { journeyId: 8 } }),
 }));
 
@@ -29,25 +34,48 @@ const JOURNEY = {
     arrivalTime: "2026-08-14T16:00:00.000Z",
 };
 
+const otherJourney = {
+    departureAddress: "10 Rue de Rivoli, Paris",
+    arrivalAddress: "Gare de Lyon, Paris",
+    departureTime: "2026-08-14T15:00:00.000Z",
+    arrivalTime: "2026-08-14T16:00:00.000Z",
+};
+
 const CONFIRMED_MATCH = {
     foundJourneyId: 1,
     user: { firstname: "Bob", lastname: "Durand", phoneNumber: "0622222222" },
-    journey: {
-        departureAddress: "10 Rue de Rivoli, Paris",
-        arrivalAddress: "Gare de Lyon, Paris",
-        departureTime: "2026-08-14T15:00:00.000Z",
-        arrivalTime: "2026-08-14T16:00:00.000Z",
-    },
+    journey: otherJourney,
     myStatus: "accepted",
     otherStatus: "accepted",
 };
+
+const PENDING_MATCH = {
+    foundJourneyId: 2,
+    user: { firstname: "Alice", lastname: "Martin" },
+    journey: otherJourney,
+    myStatus: "waiting",
+    otherStatus: "waiting",
+};
+
+const AWAITING_MATCH = {
+    foundJourneyId: 3,
+    user: { firstname: "Carl", lastname: "Petit" },
+    journey: otherJourney,
+    myStatus: "accepted",
+    otherStatus: "waiting",
+};
+
+function mockMatches(matches) {
+    getJourneyMatches.mockResolvedValue({ success: true, matches });
+}
 
 describe("JourneyDetailScreen — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
         getJourney.mockResolvedValue({ success: true, journey: JOURNEY });
-        getJourneyMatches.mockResolvedValue({ success: true, matches: [CONFIRMED_MATCH] });
+        mockMatches([CONFIRMED_MATCH]);
+        updateFoundJourneyStatus.mockResolvedValue({ success: true });
         jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
         jest.spyOn(Alert, "alert").mockImplementation(() => {});
     });
@@ -61,12 +89,11 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         expect(getJourney).toHaveBeenCalledWith({ token: "jwt", journeyId: 8 });
     });
 
-    it("shows the other user of a confirmed journey without exposing the number", async () => {
+    it("shows a confirmed match without exposing the number", async () => {
         const { findByText, getByText, queryByText } = render(<JourneyDetailScreen />);
 
         expect(await findByText("Bob Durand")).toBeTruthy();
         expect(getByText("Trajet confirmé")).toBeTruthy();
-        // The phone number must never be shown on screen (issue #110).
         expect(queryByText("0622222222")).toBeNull();
         expect(getByText("Appeler")).toBeTruthy();
     });
@@ -93,11 +120,8 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         });
     });
 
-    it("shows a fallback when the pair has no reachable number", async () => {
-        getJourneyMatches.mockResolvedValue({
-            success: true,
-            matches: [{ ...CONFIRMED_MATCH, user: { firstname: "Bob", lastname: "Durand" } }],
-        });
+    it("shows a fallback when a confirmed pair has no reachable number", async () => {
+        mockMatches([{ ...CONFIRMED_MATCH, user: { firstname: "Bob", lastname: "Durand" } }]);
 
         const { findByText, queryByText } = render(<JourneyDetailScreen />);
 
@@ -105,21 +129,87 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         expect(queryByText("Appeler")).toBeNull();
     });
 
-    it("shows the other user's own trip", async () => {
-        const { findByText } = render(<JourneyDetailScreen />);
+    it("offers accept and reject on a match awaiting the user's answer", async () => {
+        mockMatches([PENDING_MATCH]);
 
-        expect(await findByText("10 Rue de Rivoli, Paris")).toBeTruthy();
+        const { findByText, getByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Alice Martin")).toBeTruthy();
+        expect(getByText("À confirmer")).toBeTruthy();
+        expect(getByText("Accepter")).toBeTruthy();
+        expect(getByText("Refuser")).toBeTruthy();
     });
 
-    it("tells the user when no accompaniment is confirmed yet", async () => {
-        getJourneyMatches.mockResolvedValue({
-            success: true,
-            matches: [{ ...CONFIRMED_MATCH, myStatus: "waiting", otherStatus: "waiting" }],
+    it("accepts a match and reloads", async () => {
+        mockMatches([PENDING_MATCH]);
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Accepter"));
+
+        await waitFor(() => {
+            expect(updateFoundJourneyStatus).toHaveBeenCalledWith({ token: "jwt", foundJourneyId: 2, accept: true });
         });
+        // Reloaded after the update (initial load + reload).
+        expect(getJourneyMatches).toHaveBeenCalledTimes(2);
+    });
+
+    it("rejects a match", async () => {
+        mockMatches([PENDING_MATCH]);
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Refuser"));
+
+        await waitFor(() => {
+            expect(updateFoundJourneyStatus).toHaveBeenCalledWith({ token: "jwt", foundJourneyId: 2, accept: false });
+        });
+    });
+
+    it("alerts when the update fails", async () => {
+        mockMatches([PENDING_MATCH]);
+        updateFoundJourneyStatus.mockResolvedValue({ success: false, message: "Impossible de mettre à jour la demande. Réessayez." });
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Accepter"));
+
+        await waitFor(() => {
+            expect(Alert.alert).toHaveBeenCalledWith("Action impossible", "Impossible de mettre à jour la demande. Réessayez.");
+        });
+    });
+
+    it("asks the user to reconnect when the session expired while responding", async () => {
+        mockMatches([PENDING_MATCH]);
+        getSession.mockResolvedValueOnce({ token: "jwt", userId: 12 }).mockResolvedValueOnce(null);
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Accepter"));
+
+        expect(await findByText("Votre session a expiré. Reconnectez-vous.")).toBeTruthy();
+        expect(updateFoundJourneyStatus).not.toHaveBeenCalled();
+    });
+
+    it("shows a waiting note when the user already accepted", async () => {
+        mockMatches([AWAITING_MATCH]);
+
+        const { findByText, queryByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Vous avez accepté. En attente de la réponse de l'autre personne.")).toBeTruthy();
+        expect(queryByText("Accepter")).toBeNull();
+    });
+
+    it("tells the user when there is no match yet", async () => {
+        mockMatches([]);
 
         const { findByTestId } = render(<JourneyDetailScreen />);
 
         expect(await findByTestId("journey-detail-no-match")).toBeTruthy();
+    });
+
+    it("goes back when tapping the back button", async () => {
+        const { findByLabelText } = render(<JourneyDetailScreen />);
+
+        fireEvent.press(await findByLabelText("Retour"));
+
+        expect(mockGoBack).toHaveBeenCalled();
     });
 
     it("shows an error when the journey cannot be loaded", async () => {
