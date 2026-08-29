@@ -39,6 +39,10 @@ const otherJourney = {
     arrivalAddress: "Gare de Lyon, Paris",
     departureTime: "2026-08-14T15:00:00.000Z",
     arrivalTime: "2026-08-14T16:00:00.000Z",
+    departureLat: "48.8600",
+    departureLon: "2.3400",
+    arrivalLat: "48.8443",
+    arrivalLon: "2.3743",
 };
 
 const CONFIRMED_MATCH = {
@@ -226,6 +230,23 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         fireEvent.press(await findByLabelText("Retour"));
 
         expect(mockGoBack).toHaveBeenCalled();
+    });
+
+    it("shows the itinerary map when the journey has coordinates", async () => {
+        getJourney.mockResolvedValue({
+            success: true,
+            journey: {
+                ...JOURNEY,
+                departureLat: "48.8558",
+                departureLon: "2.3588",
+                arrivalLat: "48.8443",
+                arrivalLon: "2.3743",
+            },
+        });
+
+        const { findByLabelText } = render(<JourneyDetailScreen />);
+
+        expect(await findByLabelText(/Carte de l'itinéraire/)).toBeTruthy();
     });
 
     it("shows an error when the journey cannot be loaded", async () => {
