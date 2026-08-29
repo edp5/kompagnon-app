@@ -69,7 +69,7 @@ describe("LoginScreen — Integration Tests", () => {
         });
     });
 
-    it("should navigate to Home on successful login", async () => {
+    it("should reset to the app on successful login", async () => {
         apiFetchModule.apiFetch.mockResolvedValueOnce({
             ok: true,
             json: async () => ({ data: { userId: 42, token: "jwt" } }),
@@ -81,7 +81,7 @@ describe("LoginScreen — Integration Tests", () => {
         await waitFor(() => {
             expect(mockReset).toHaveBeenCalledWith({
                 index: 0,
-                routes: [{ name: "Home", params: { userId: 42 } }],
+                routes: [{ name: "Main" }],
             });
         });
         expect(saveSession).toHaveBeenCalledWith({ token: "jwt", userId: 42 });

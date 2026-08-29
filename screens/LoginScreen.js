@@ -72,7 +72,7 @@ export default function LoginScreen() {
         await saveSession({ token: payload?.data?.token, userId: payload?.data?.userId });
         navigation.reset({
           index: 0,
-          routes: [{ name: "Home", params: { userId: payload?.data?.userId } }],
+          routes: [{ name: "Main" }],
         });
       } else if (response && response.status === 401) {
         setErrorWithShake("Identifiants incorrects.");
