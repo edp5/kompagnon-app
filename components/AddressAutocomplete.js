@@ -1,10 +1,10 @@
-import { Feather } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors, fonts, radius } from "../theme/tokens";
 import { searchAddresses } from "../utils/location";
 import BrandInput from "./BrandInput";
+import Icon from "./Icon";
 
 const DEBOUNCE_MS = 350;
 
@@ -99,7 +99,7 @@ export default function AddressAutocomplete({
               accessibilityLabel={suggestion.label}
               testID={`${testID}-suggestion-${index}`}
             >
-              <Feather name="map-pin" size={14} color={colors.textLight} style={styles.suggestionIcon} />
+              <Icon name="map-pin" size={14} color={colors.textLight} style={styles.suggestionIcon} />
               <Text style={styles.suggestionText} numberOfLines={2}>{suggestion.label}</Text>
             </TouchableOpacity>
           ))}

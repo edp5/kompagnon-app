@@ -1,5 +1,5 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import { Alert, Linking } from "react-native";
+import { AccessibilityInfo, Alert, Linking } from "react-native";
 
 import JourneyDetailScreen from "../../screens/JourneyDetailScreen";
 import { getJourney, getJourneyMatches, updateFoundJourneyStatus } from "../../utils/journeys";
@@ -78,6 +78,10 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         updateFoundJourneyStatus.mockResolvedValue({ success: true });
         jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
         jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     it("shows the journey details", async () => {
@@ -161,6 +165,18 @@ describe("JourneyDetailScreen — Integration Tests", () => {
 
         await waitFor(() => {
             expect(updateFoundJourneyStatus).toHaveBeenCalledWith({ token: "jwt", foundJourneyId: 2, accept: false });
+        });
+    });
+
+    it("announces the result to screen readers when responding", async () => {
+        mockMatches([PENDING_MATCH]);
+        const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(() => {});
+
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Accepter"));
+
+        await waitFor(() => {
+            expect(announce).toHaveBeenCalledWith("Demande acceptée.");
         });
     });
 

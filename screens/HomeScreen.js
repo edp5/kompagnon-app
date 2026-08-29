@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 
 import logo from "../assets/kompagnon-logo.png";
+import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { checkHealth } from "../utils/api-fetch";
 
@@ -44,7 +44,7 @@ export default function HomeScreen() {
           testID="api-status"
           accessibilityRole="text"
         >
-          <Feather
+          <Icon
             name={apiIsActive ? "check-circle" : "alert-circle"}
             size={14}
             color={apiIsActive ? colors.successText : colors.danger}
@@ -60,7 +60,7 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Demander un accompagnement"
         >
-          <Feather name="navigation" size={18} color={colors.textOnDark} />
+          <Icon name="navigation" size={18} color={colors.textOnDark} />
           <Text style={styles.primaryButtonText}>Demander un accompagnement</Text>
         </TouchableOpacity>
 
@@ -71,7 +71,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="Mes trajets"
           >
-            <Feather name="calendar" size={17} color={colors.navy} />
+            <Icon name="calendar" size={17} color={colors.navy} />
             <Text style={styles.secondaryButtonText}>Mes trajets</Text>
           </TouchableOpacity>
 
@@ -81,7 +81,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="Mon profil"
           >
-            <Feather name="user" size={17} color={colors.navy} />
+            <Icon name="user" size={17} color={colors.navy} />
             <Text style={styles.secondaryButtonText}>Mon profil</Text>
           </TouchableOpacity>
         </View>

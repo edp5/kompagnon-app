@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -16,6 +15,7 @@ import {
 } from "react-native";
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
+import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { recordJourney } from "../utils/journeys";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "../utils/location";
@@ -151,7 +151,7 @@ export default function RecordJourneyScreen() {
               accessibilityRole="button"
               accessibilityLabel="Retour"
             >
-              <Feather name="arrow-left" size={22} color={colors.navy} />
+              <Icon name="arrow-left" size={22} color={colors.navy} />
             </TouchableOpacity>
             <Text style={styles.title}>Nouveau trajet</Text>
             <Text style={styles.subtitle}>Où souhaitez-vous être accompagné ?</Text>
@@ -189,7 +189,7 @@ export default function RecordJourneyScreen() {
               <ActivityIndicator color={colors.tealDark} />
             ) : (
               <>
-                <Feather name="navigation" size={16} color={colors.tealDark} />
+                <Icon name="navigation" size={16} color={colors.tealDark} />
                 <Text style={styles.locationButtonText}>Utiliser ma position</Text>
               </>
             )}

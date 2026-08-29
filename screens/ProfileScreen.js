@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
@@ -12,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import Icon from "../components/Icon";
 import { USER_GENRE, USER_ROLES } from "../constants";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { PLACEHOLDER } from "../utils/format";
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <Feather name="arrow-left" size={22} color={colors.navy} />
+            <Icon name="arrow-left" size={22} color={colors.navy} />
           </TouchableOpacity>
           <Text style={styles.title}>Mon profil</Text>
         </View>
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
               </Text>
               <Text style={styles.email}>{profile.email}</Text>
               <View style={styles.rolePill}>
-                <Feather name="user-check" size={13} color={colors.tealDark} />
+                <Icon name="user-check" size={13} color={colors.tealDark} />
                 <Text style={styles.rolePillText}>
                   {USER_ROLES[profile.role] ?? "Rôle non défini"}
                 </Text>
@@ -165,7 +165,7 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               accessibilityLabel="Se déconnecter"
             >
-              <Feather name="log-out" size={16} color={colors.danger} />
+              <Icon name="log-out" size={16} color={colors.danger} />
               <Text style={styles.logoutText}>Se déconnecter</Text>
             </TouchableOpacity>
           </>

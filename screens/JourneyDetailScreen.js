@@ -1,8 +1,8 @@
-import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Linking,
@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 
+import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
@@ -78,6 +79,7 @@ export default function JourneyDetailScreen() {
         Alert.alert("Action impossible", result.message);
         return;
       }
+      AccessibilityInfo.announceForAccessibility(accept ? "Demande acceptée." : "Demande refusée.");
       load();
     },
     [load],
@@ -98,7 +100,7 @@ export default function JourneyDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <Feather name="arrow-left" size={22} color={colors.navy} />
+            <Icon name="arrow-left" size={22} color={colors.navy} />
           </TouchableOpacity>
           <Text style={styles.title}>Détail du trajet</Text>
         </View>
@@ -130,12 +132,16 @@ export default function JourneyDetailScreen() {
 
         {!loading && !error && journey && (
           <>
-            <View style={styles.card}>
+            <View
+              style={styles.card}
+              accessible
+              accessibilityLabel={`Trajet du ${formatShortDate(journey.departureTime)}. Départ ${journey.departureAddress} à ${formatTime(journey.departureTime)}. Arrivée ${journey.arrivalAddress} à ${formatTime(journey.arrivalTime)}.`}
+            >
               <Text style={styles.date}>{formatShortDate(journey.departureTime)}</Text>
 
               <View style={styles.step}>
                 <View style={styles.stepIcon}>
-                  <Feather name="map-pin" size={15} color={colors.tealDark} />
+                  <Icon name="map-pin" size={15} color={colors.tealDark} />
                 </View>
                 <View style={styles.stepBody}>
                   <Text style={styles.stepLabel}>Départ</Text>
@@ -146,7 +152,7 @@ export default function JourneyDetailScreen() {
 
               <View style={styles.step}>
                 <View style={styles.stepIcon}>
-                  <Feather name="flag" size={15} color={colors.tealDark} />
+                  <Icon name="flag" size={15} color={colors.tealDark} />
                 </View>
                 <View style={styles.stepBody}>
                   <Text style={styles.stepLabel}>Arrivée</Text>
@@ -172,7 +178,7 @@ export default function JourneyDetailScreen() {
               ))
             ) : (
               <View style={styles.emptyCard} testID="journey-detail-no-match">
-                <Feather name="clock" size={20} color={colors.textLight} />
+                <Icon name="clock" size={20} color={colors.textLight} />
                 <Text style={styles.emptyText}>
                   Ce trajet n&apos;a pas encore de correspondance.
                 </Text>
@@ -193,10 +199,17 @@ export default function JourneyDetailScreen() {
 function MatchCard({ match, responding, onRespond, onCall }) {
   const state = matchState(match);
   const firstname = match.user?.firstname;
+  const fullName = [firstname, match.user?.lastname].filter(Boolean).join(" ") || "votre binôme";
 
   return (
     <View style={styles.card} testID={`match-card-${match.foundJourneyId}`}>
-      <View style={styles.personRow}>
+      <View
+        style={styles.personRow}
+        accessible
+        accessibilityLabel={`${fullName}, ${
+          state.confirmed ? "trajet confirmé" : state.actionable ? "demande à confirmer" : "en attente de réponse"
+        }`}
+      >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{(firstname?.[0] ?? "?").toUpperCase()}</Text>
         </View>
@@ -206,12 +219,12 @@ function MatchCard({ match, responding, onRespond, onCall }) {
           </Text>
           {state.confirmed ? (
             <View style={styles.confirmedBadge}>
-              <Feather name="check" size={11} color={colors.successText} />
+              <Icon name="check" size={11} color={colors.successText} />
               <Text style={styles.confirmedText}>Trajet confirmé</Text>
             </View>
           ) : (
             <View style={styles.pendingBadge}>
-              <Feather name="clock" size={11} color={colors.warning} />
+              <Icon name="clock" size={11} color={colors.warning} />
               <Text style={styles.pendingText}>
                 {state.actionable ? "À confirmer" : "En attente"}
               </Text>
@@ -220,17 +233,21 @@ function MatchCard({ match, responding, onRespond, onCall }) {
         </View>
       </View>
 
-      <View style={styles.otherTrip}>
+      <View
+        style={styles.otherTrip}
+        accessible
+        accessibilityLabel={`Son trajet : départ ${match.journey?.departureAddress ?? "adresse inconnue"} à ${formatTime(match.journey?.departureTime)}, arrivée ${match.journey?.arrivalAddress ?? "adresse inconnue"} à ${formatTime(match.journey?.arrivalTime)}.`}
+      >
         <Text style={styles.otherTripTitle}>Son trajet</Text>
         <View style={styles.otherTripRow}>
-          <Feather name="map-pin" size={13} color={colors.textLight} />
+          <Icon name="map-pin" size={13} color={colors.textLight} />
           <Text style={styles.otherTripText} numberOfLines={1}>
             {match.journey?.departureAddress}
           </Text>
           <Text style={styles.otherTripTime}>{formatTime(match.journey?.departureTime)}</Text>
         </View>
         <View style={styles.otherTripRow}>
-          <Feather name="flag" size={13} color={colors.textLight} />
+          <Icon name="flag" size={13} color={colors.textLight} />
           <Text style={styles.otherTripText} numberOfLines={1}>
             {match.journey?.arrivalAddress}
           </Text>
@@ -246,7 +263,7 @@ function MatchCard({ match, responding, onRespond, onCall }) {
             accessibilityRole="button"
             accessibilityLabel={`Appeler ${firstname ?? "votre binôme"}`}
           >
-            <Feather name="phone" size={16} color={colors.textOnDark} />
+            <Icon name="phone" size={16} color={colors.textOnDark} />
             <Text style={styles.callButtonText}>Appeler</Text>
           </TouchableOpacity>
         ) : (
