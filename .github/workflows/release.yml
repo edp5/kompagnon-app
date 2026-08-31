@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: call release
-        uses: edp5/edp5-actions/release@v1.8.0
+        uses: edp5/edp5-actions/release@v1.8.1
         with:
           token: ${{ secrets.SERVICE_TOKEN }}
