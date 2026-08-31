@@ -14,6 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: edp5/edp5-actions/update-node-version@v1.8.0
+      - uses: edp5/edp5-actions/update-node-version@v1.8.1
         with:
           token: ${{ secrets.SERVICE_TOKEN }}
