@@ -79,14 +79,6 @@ export default function ProfileScreen() {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-          >
-            <Icon name="arrow-left" size={22} color={colors.navy} />
-          </TouchableOpacity>
           <Text style={styles.title}>Mon profil</Text>
         </View>
 

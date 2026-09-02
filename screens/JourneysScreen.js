@@ -2,7 +2,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -22,16 +22,22 @@ export default function JourneysScreen() {
 
   const [journeys, setJourneys] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ refresh = false } = {}) => {
+    if (refresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     const session = await getSession();
     if (!session) {
       setError("Votre session a expiré. Reconnectez-vous.");
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -42,7 +48,10 @@ export default function JourneysScreen() {
       setError(result.message);
     }
     setLoading(false);
+    setRefreshing(false);
   }, []);
+
+  const onRefresh = useCallback(() => load({ refresh: true }), [load]);
 
   // Reload on focus so a journey confirmed elsewhere shows up on the way back.
   useFocusEffect(
@@ -54,23 +63,26 @@ export default function JourneysScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.teal} colors={[colors.teal]} />
+        }
+      >
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-          >
-            <Icon name="arrow-left" size={22} color={colors.navy} />
-          </TouchableOpacity>
           <Text style={styles.title}>Mes prochains trajets</Text>
           <Text style={styles.subtitle}>Vos accompagnements et demandes à confirmer</Text>
         </View>
 
         {loading && (
-          <View style={styles.centered} testID="journeys-loading">
-            <ActivityIndicator color={colors.teal} accessibilityLabel="Chargement…" />
+          <View testID="journeys-loading" accessibilityLabel="Chargement des trajets" accessible>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.skeletonCard}>
+                <View style={[styles.skeleton, { width: "40%" }]} />
+                <View style={[styles.skeleton, { width: "85%" }]} />
+                <View style={[styles.skeleton, { width: "70%" }]} />
+              </View>
+            ))}
           </View>
         )}
 
@@ -251,6 +263,19 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 14,
     ...shadow.card,
+  },
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: 18,
+    marginBottom: 14,
+    gap: 12,
+    ...shadow.card,
+  },
+  skeleton: {
+    height: 14,
+    borderRadius: radius.sm,
+    backgroundColor: colors.beige,
   },
   cardTop: {
     flexDirection: "row",

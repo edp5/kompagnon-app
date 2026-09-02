@@ -14,9 +14,8 @@ jest.mock("../../utils/session", () => ({
 }));
 
 const mockReset = jest.fn();
-const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ reset: mockReset, goBack: mockGoBack }),
+    useNavigation: () => ({ reset: mockReset }),
 }));
 
 const PROFILE = {
@@ -97,10 +96,4 @@ describe("ProfileScreen — Integration Tests", () => {
         expect(clearSession).toHaveBeenCalled();
     });
 
-    it("goes back when tapping the back button", async () => {
-        const { findByLabelText } = render(<ProfileScreen />);
-        fireEvent.press(await findByLabelText("Retour"));
-
-        expect(mockGoBack).toHaveBeenCalled();
-    });
 });
