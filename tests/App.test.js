@@ -18,6 +18,12 @@ jest.mock("../screens/LoginScreen", () => {
   Screen.displayName = "MockLoginScreen";
   return Screen;
 });
+jest.mock("../screens/WelcomeScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>WELCOME_SCREEN</Text>;
+  Screen.displayName = "MockWelcomeScreen";
+  return Screen;
+});
 jest.mock("../screens/HomeScreen", () => {
   const { Text } = require("react-native");
   const Screen = () => <Text>HOME_SCREEN</Text>;
@@ -54,10 +60,10 @@ describe("App", () => {
     expect(await findByText("Service indisponible")).toBeTruthy();
   });
 
-  it("starts on Register when the API is healthy and no session is stored", async () => {
+  it("starts on the welcome screen when the API is healthy and no session is stored", async () => {
     const { findByText } = render(<App />);
 
-    expect(await findByText("REGISTER_SCREEN")).toBeTruthy();
+    expect(await findByText("WELCOME_SCREEN")).toBeTruthy();
   });
 
   it("starts on Home when a session is stored (auto-login)", async () => {

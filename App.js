@@ -22,6 +22,7 @@ import JourneyDetailScreen from "./screens/JourneyDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
+import WelcomeScreen from "./screens/WelcomeScreen";
 import { colors } from "./theme/tokens";
 import { checkHealth } from "./utils/api-fetch";
 import { getSession } from "./utils/session";
@@ -58,7 +59,7 @@ export default function App() {
   // answers. The stored session then decides the entry screen, so a logged-in
   // user skips the auth flow.
   const [apiStatus, setApiStatus] = useState("loading"); // "loading" | "ready" | "error"
-  const [initialRoute, setInitialRoute] = useState("Register");
+  const [initialRoute, setInitialRoute] = useState("Welcome");
 
   const start = useCallback(async () => {
     setApiStatus("loading");
@@ -68,7 +69,7 @@ export default function App() {
       return;
     }
     const session = await getSession();
-    setInitialRoute(session ? "Main" : "Register");
+    setInitialRoute(session ? "Main" : "Welcome");
     setApiStatus("ready");
   }, []);
 
@@ -95,6 +96,7 @@ export default function App() {
           initialRouteName={initialRoute}
           screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
         >
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Register" component={RegistrationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Main" component={MainTabs} />
