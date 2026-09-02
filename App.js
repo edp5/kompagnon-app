@@ -25,7 +25,8 @@ import RegistrationScreen from "./screens/RegistrationScreen";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import { colors } from "./theme/tokens";
 import { checkHealth } from "./utils/api-fetch";
-import { getSession } from "./utils/session";
+import { clearSession, getSession } from "./utils/session";
+import { getUserProfile } from "./utils/users";
 
 const Stack = createNativeStackNavigator();
 
@@ -68,8 +69,21 @@ export default function App() {
       setApiStatus("error");
       return;
     }
+    // A stored token only means the user was logged in before. Verify it is
+    // still valid by fetching the profile: an expired or revoked token must not
+    // land the user on the authenticated app (issue #125).
     const session = await getSession();
-    setInitialRoute(session ? "Main" : "Welcome");
+    if (session) {
+      const profile = await getUserProfile({ token: session.token });
+      if (profile.success) {
+        setInitialRoute("Main");
+      } else {
+        await clearSession();
+        setInitialRoute("Welcome");
+      }
+    } else {
+      setInitialRoute("Welcome");
+    }
     setApiStatus("ready");
   }, []);
 

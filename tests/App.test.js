@@ -2,7 +2,8 @@ import { render } from "@testing-library/react-native";
 
 import App from "../App.js";
 import { checkHealth } from "../utils/api-fetch";
-import { getSession } from "../utils/session";
+import { clearSession, getSession } from "../utils/session";
+import { getUserProfile } from "../utils/users";
 
 // Mock the screens so this suite only verifies the app shell: the API health
 // gate and the navigator's initial route.
@@ -43,6 +44,11 @@ jest.mock("../utils/api-fetch", () => ({
 
 jest.mock("../utils/session", () => ({
   getSession: jest.fn(),
+  clearSession: jest.fn(),
+}));
+
+jest.mock("../utils/users", () => ({
+  getUserProfile: jest.fn(),
 }));
 
 describe("App", () => {
@@ -50,6 +56,7 @@ describe("App", () => {
     jest.clearAllMocks();
     checkHealth.mockResolvedValue(true);
     getSession.mockResolvedValue(null);
+    getUserProfile.mockResolvedValue({ success: true, profile: { firstname: "Alice" } });
   });
 
   it("shows an error message when the API is unavailable", async () => {
@@ -66,12 +73,24 @@ describe("App", () => {
     expect(await findByText("WELCOME_SCREEN")).toBeTruthy();
   });
 
-  it("starts on Home when a session is stored (auto-login)", async () => {
+  it("starts on Home when a session is stored and the token is still valid", async () => {
     getSession.mockResolvedValue({ token: "jwt", userId: 1 });
 
     const { findByText } = render(<App />);
 
     expect(await findByText("HOME_SCREEN")).toBeTruthy();
+    expect(getUserProfile).toHaveBeenCalledWith({ token: "jwt" });
+  });
+
+  it("logs out and starts on the welcome screen when the stored token is invalid", async () => {
+    getSession.mockResolvedValue({ token: "expired", userId: 1 });
+    getUserProfile.mockResolvedValue({ success: false, message: "Session expirée. Reconnectez-vous." });
+
+    const { findByText, queryByText } = render(<App />);
+
+    expect(await findByText("WELCOME_SCREEN")).toBeTruthy();
+    expect(clearSession).toHaveBeenCalled();
+    expect(queryByText("HOME_SCREEN")).toBeNull();
   });
 
   it("does not read the session when the API is unavailable", async () => {
