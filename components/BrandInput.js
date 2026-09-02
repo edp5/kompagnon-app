@@ -1,8 +1,8 @@
-import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { colors, fonts, radius } from "../theme/tokens";
+import Icon from "./Icon";
 
 /**
  * Kompagnon-styled text field: "pill" control, leading icon, teal focus.
@@ -43,7 +43,7 @@ export default function BrandInput({
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.control, focused && styles.controlFocused]}>
         {icon && (
-          <Feather name={icon} size={18} color={colors.textLight} style={styles.leadingIcon} />
+          <Icon name={icon} size={18} color={colors.textLight} style={styles.leadingIcon} />
         )}
         <TextInput
           style={styles.input}

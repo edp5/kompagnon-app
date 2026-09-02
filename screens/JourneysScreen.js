@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
@@ -12,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getUpcomingMatchedJourneys } from "../utils/journeys";
@@ -62,7 +62,7 @@ export default function JourneysScreen() {
             accessibilityRole="button"
             accessibilityLabel="Retour"
           >
-            <Feather name="arrow-left" size={22} color={colors.navy} />
+            <Icon name="arrow-left" size={22} color={colors.navy} />
           </TouchableOpacity>
           <Text style={styles.title}>Mes prochains trajets</Text>
           <Text style={styles.subtitle}>Vos accompagnements et demandes à confirmer</Text>
@@ -95,7 +95,7 @@ export default function JourneysScreen() {
 
         {!loading && !error && journeys.length === 0 && (
           <View style={styles.emptyCard} testID="journeys-empty">
-            <Feather name="calendar" size={22} color={colors.textLight} />
+            <Icon name="calendar" size={22} color={colors.textLight} />
             <Text style={styles.emptyTitle}>Aucun trajet à venir</Text>
             <Text style={styles.emptyText}>
               Vos trajets apparaîtront ici dès qu&apos;une correspondance sera trouvée.
@@ -116,12 +116,12 @@ export default function JourneysScreen() {
               <Text style={styles.cardDate}>{formatShortDate(journey.departureTime)}</Text>
               {journey.confirmedMatch ? (
                 <View style={styles.confirmedBadge}>
-                  <Feather name="check" size={11} color={colors.successText} />
+                  <Icon name="check" size={11} color={colors.successText} />
                   <Text style={styles.confirmedText}>Confirmé</Text>
                 </View>
               ) : journey.pendingCount > 0 ? (
                 <View style={styles.pendingBadge}>
-                  <Feather name="clock" size={11} color={colors.warning} />
+                  <Icon name="clock" size={11} color={colors.warning} />
                   <Text style={styles.pendingText}>
                     {journey.pendingCount} demande{journey.pendingCount > 1 ? "s" : ""}
                   </Text>
@@ -130,26 +130,26 @@ export default function JourneysScreen() {
             </View>
 
             <View style={styles.leg}>
-              <Feather name="map-pin" size={14} color={colors.tealDark} />
+              <Icon name="map-pin" size={14} color={colors.tealDark} />
               <Text style={styles.legText} numberOfLines={1}>{journey.departureAddress}</Text>
               <Text style={styles.legTime}>{formatTime(journey.departureTime)}</Text>
             </View>
             <View style={styles.leg}>
-              <Feather name="flag" size={14} color={colors.textLight} />
+              <Icon name="flag" size={14} color={colors.textLight} />
               <Text style={styles.legText} numberOfLines={1}>{journey.arrivalAddress}</Text>
               <Text style={styles.legTime}>{formatTime(journey.arrivalTime)}</Text>
             </View>
 
             {journey.confirmedMatch?.user ? (
               <View style={styles.withUser}>
-                <Feather name="user" size={13} color={colors.textMedium} />
+                <Icon name="user" size={13} color={colors.textMedium} />
                 <Text style={styles.withUserText}>
                   Avec {journey.confirmedMatch.user.firstname} {journey.confirmedMatch.user.lastname}
                 </Text>
               </View>
             ) : journey.pendingCount > 0 ? (
               <View style={styles.withUser}>
-                <Feather name="user-check" size={13} color={colors.textMedium} />
+                <Icon name="user-check" size={13} color={colors.textMedium} />
                 <Text style={styles.withUserText}>Appuyez pour répondre à la demande</Text>
               </View>
             ) : null}
