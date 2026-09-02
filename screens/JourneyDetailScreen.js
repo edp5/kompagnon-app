@@ -15,6 +15,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
+import JourneyMap from "../components/JourneyMap";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
@@ -89,6 +90,20 @@ export default function JourneyDetailScreen() {
     load();
   }, [load]);
 
+  const otherTrip = matches.map((item) => item.journey).find((trip) => trip && trip.departureLat != null);
+  const mapMine = journey && journey.departureLat != null
+    ? {
+        departure: { lat: journey.departureLat, lon: journey.departureLon, label: journey.departureAddress },
+        arrival: { lat: journey.arrivalLat, lon: journey.arrivalLon, label: journey.arrivalAddress },
+      }
+    : null;
+  const mapOther = otherTrip
+    ? {
+        departure: { lat: otherTrip.departureLat, lon: otherTrip.departureLon, label: otherTrip.departureAddress },
+        arrival: { lat: otherTrip.arrivalLat, lon: otherTrip.arrivalLon, label: otherTrip.arrivalAddress },
+      }
+    : undefined;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -161,6 +176,17 @@ export default function JourneyDetailScreen() {
                 <Text style={styles.stepTime}>{formatTime(journey.arrivalTime)}</Text>
               </View>
             </View>
+
+            {mapMine && (
+              <>
+                <Text style={styles.sectionTitle}>Itinéraire</Text>
+                <JourneyMap
+                  mine={mapMine}
+                  other={mapOther}
+                  meeting={mapMine.departure}
+                />
+              </>
+            )}
 
             <Text style={styles.sectionTitle}>
               {matches.length > 1 ? "Vos correspondances" : "Votre correspondance"}

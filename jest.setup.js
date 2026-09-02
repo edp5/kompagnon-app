@@ -67,3 +67,10 @@ jest.mock("react-native-safe-area-context", () => {
     initialWindowMetrics: { insets: inset, frame },
   };
 });
+
+// react-native-webview renders a native view; stub it as a simple element in tests.
+jest.mock("react-native-webview", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return { WebView: (props) => React.createElement(View, { ...props, testID: props.testID ?? "webview" }) };
+});
