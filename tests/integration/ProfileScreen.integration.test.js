@@ -25,8 +25,8 @@ const PROFILE = {
     email: "alice@exemple.com",
     birthday: "1990-05-12",
     genre: "F",
-    role: "invalid",
-    disabilities: ["mobility"],
+    role: "passenger",
+    disabilities: ["wheelchair"],
 };
 
 describe("ProfileScreen — Integration Tests", () => {
@@ -49,15 +49,39 @@ describe("ProfileScreen — Integration Tests", () => {
     it("maps the role and genre to their display labels", async () => {
         const { findByText, getAllByText } = render(<ProfileScreen />);
 
-        // "Personne handicapé" appears in the role pill and in the details row.
+        // "Personne handicapée" appears in the role pill and in the details row.
         expect((await findByText("Mme")).props.children).toBe("Mme");
-        expect(getAllByText("Personne handicapé").length).toBeGreaterThan(0);
+        expect(getAllByText("Personne handicapée").length).toBe(2);
     });
 
-    it("lists the accompaniment needs", async () => {
+    it("maps the companion role to its display label", async () => {
+        getUserProfile.mockResolvedValue({ success: true, profile: { ...PROFILE, role: "companion" } });
+
+        const { findAllByText } = render(<ProfileScreen />);
+
+        expect((await findAllByText("Accompagnateur")).length).toBe(2);
+    });
+
+    it("falls back to a neutral label when the role is not set", async () => {
+        getUserProfile.mockResolvedValue({ success: true, profile: { ...PROFILE, role: null } });
+
         const { findByText } = render(<ProfileScreen />);
 
-        expect(await findByText("mobility")).toBeTruthy();
+        expect(await findByText("Rôle non défini")).toBeTruthy();
+    });
+
+    it("lists the accompaniment needs with their display labels", async () => {
+        const { findByText } = render(<ProfileScreen />);
+
+        expect(await findByText("Fauteuil roulant")).toBeTruthy();
+    });
+
+    it("shows an unknown accompaniment need as sent by the API", async () => {
+        getUserProfile.mockResolvedValue({ success: true, profile: { ...PROFILE, disabilities: ["unmapped"] } });
+
+        const { findByText } = render(<ProfileScreen />);
+
+        expect(await findByText("unmapped")).toBeTruthy();
     });
 
     it("shows an error when the profile cannot be loaded", async () => {
