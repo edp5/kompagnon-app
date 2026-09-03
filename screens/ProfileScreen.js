@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
-import { USER_GENRE, USER_ROLES } from "../constants";
+import { USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../constants";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { PLACEHOLDER } from "../utils/format";
 import { clearSession, getSession } from "../utils/session";
@@ -144,7 +144,9 @@ export default function ProfileScreen() {
                 <View style={styles.tagsCard}>
                   {profile.disabilities.map((disability) => (
                     <View key={disability} style={styles.tag}>
-                      <Text style={styles.tagText}>{disability}</Text>
+                      <Text style={styles.tagText}>
+                        {USER_DISABILITIES[disability] ?? disability}
+                      </Text>
                     </View>
                   ))}
                 </View>
