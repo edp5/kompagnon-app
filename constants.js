@@ -29,7 +29,7 @@ export const USER_GENRE = {
  * @enum {string}
  */
 export const USER_DISABILITIES = {
-  blind: "Cécité",
+  blind: "Aveugle",
   visually: "Déficience visuelle",
   wheelchair: "Fauteuil roulant",
   mental: "Handicap mental",
