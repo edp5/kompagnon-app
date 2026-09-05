@@ -106,6 +106,15 @@ describe("HomeScreen — Integration Tests", () => {
         expect(await findByTestId("home-empty")).toBeTruthy();
     });
 
+    it("reads nothing rather than calling the API without a session", async () => {
+        getSession.mockResolvedValue(null);
+
+        const { findByTestId } = render(<HomeScreen />);
+
+        expect(await findByTestId("home-empty")).toBeTruthy();
+        expect(getHomeOverview).not.toHaveBeenCalled();
+    });
+
     it("falls back to an empty home when the journeys cannot be read", async () => {
         getHomeOverview.mockResolvedValue({ success: false, message: "Session expirée." });
 
