@@ -14,7 +14,7 @@ import {
 import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
-import { getPastMatchedJourneys, getUpcomingMatchedJourneys } from "../utils/journeys";
+import { getPastMatchedJourneys, getUpcomingJourneys } from "../utils/journeys";
 import { getSession } from "../utils/session";
 
 export default function JourneysScreen() {
@@ -42,7 +42,7 @@ export default function JourneysScreen() {
       return;
     }
 
-    const fetchJourneys = tab === "past" ? getPastMatchedJourneys : getUpcomingMatchedJourneys;
+    const fetchJourneys = tab === "past" ? getPastMatchedJourneys : getUpcomingJourneys;
     const result = await fetchJourneys({ token: session.token });
     if (result.success) {
       setJourneys(result.journeys);
@@ -144,7 +144,7 @@ export default function JourneysScreen() {
             <Text style={styles.emptyText}>
               {tab === "past"
                 ? "Vos accompagnements terminés seront conservés ici."
-                : "Vos trajets apparaîtront ici dès qu'une correspondance sera trouvée."}
+                : "Demandez un accompagnement et votre trajet apparaîtra ici, même avant qu'une correspondance soit trouvée."}
             </Text>
           </View>
         )}
@@ -172,6 +172,11 @@ export default function JourneysScreen() {
                     {journey.pendingCount} demande{journey.pendingCount > 1 ? "s" : ""}
                   </Text>
                 </View>
+              ) : journey.searching ? (
+                <View style={styles.searchingBadge}>
+                  <Icon name="search" size={11} color={colors.tealDark} />
+                  <Text style={styles.searchingText}>En recherche</Text>
+                </View>
               ) : null}
             </View>
 
@@ -197,6 +202,13 @@ export default function JourneysScreen() {
               <View style={styles.withUser}>
                 <Icon name="user-check" size={13} color={colors.textMedium} />
                 <Text style={styles.withUserText}>Appuyez pour répondre à la demande</Text>
+              </View>
+            ) : journey.searching ? (
+              <View style={styles.withUser}>
+                <Icon name="clock" size={13} color={colors.textMedium} />
+                <Text style={styles.withUserText}>
+                  Nous cherchons un accompagnateur pour ce trajet.
+                </Text>
               </View>
             ) : null}
           </TouchableOpacity>
@@ -371,6 +383,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: radius.full,
     backgroundColor: colors.sand,
+  },
+  searchingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.full,
+    backgroundColor: colors.tealLight,
+  },
+  searchingText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.tealDark,
   },
   pendingText: {
     fontSize: 11,

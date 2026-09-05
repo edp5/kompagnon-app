@@ -1,11 +1,11 @@
 import { fireEvent, render } from "@testing-library/react-native";
 
 import JourneysScreen from "../../screens/JourneysScreen";
-import { getPastMatchedJourneys, getUpcomingMatchedJourneys } from "../../utils/journeys";
+import { getPastMatchedJourneys, getUpcomingJourneys } from "../../utils/journeys";
 import { getSession } from "../../utils/session";
 
 jest.mock("../../utils/journeys", () => ({
-    getUpcomingMatchedJourneys: jest.fn(),
+    getUpcomingJourneys: jest.fn(),
     getPastMatchedJourneys: jest.fn(),
 }));
 
@@ -59,7 +59,7 @@ describe("JourneysScreen — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
-        getUpcomingMatchedJourneys.mockResolvedValue({ success: true, journeys: [CONFIRMED_JOURNEY] });
+        getUpcomingJourneys.mockResolvedValue({ success: true, journeys: [CONFIRMED_JOURNEY] });
         getPastMatchedJourneys.mockResolvedValue({ success: true, journeys: [] });
     });
 
@@ -70,16 +70,38 @@ describe("JourneysScreen — Integration Tests", () => {
         expect(getByText("Gare de Lyon, Paris")).toBeTruthy();
         expect(getByText("Avec Bob Durand")).toBeTruthy();
         expect(getByText("Confirmé")).toBeTruthy();
-        expect(getUpcomingMatchedJourneys).toHaveBeenCalledWith({ token: "jwt" });
+        expect(getUpcomingJourneys).toHaveBeenCalledWith({ token: "jwt" });
     });
 
     it("flags a journey with pending requests to answer", async () => {
-        getUpcomingMatchedJourneys.mockResolvedValue({ success: true, journeys: [PENDING_JOURNEY] });
+        getUpcomingJourneys.mockResolvedValue({ success: true, journeys: [PENDING_JOURNEY] });
 
         const { findByText, getByText } = render(<JourneysScreen />);
 
         expect(await findByText("2 demandes")).toBeTruthy();
         expect(getByText("Appuyez pour répondre à la demande")).toBeTruthy();
+    });
+
+    it("shows a journey nobody has matched yet, saying it is being searched", async () => {
+        getUpcomingJourneys.mockResolvedValue({
+            success: true,
+            journeys: [{
+                id: 12,
+                departureAddress: "Place de la Bastille, Paris",
+                arrivalAddress: "Place de la Nation, Paris",
+                departureTime: "2026-08-14T09:00:00.000Z",
+                arrivalTime: "2026-08-14T09:40:00.000Z",
+                matches: [],
+                confirmedMatch: null,
+                pendingCount: 0,
+                searching: true,
+            }],
+        });
+
+        const { findByText } = render(<JourneysScreen />);
+
+        expect(await findByText("En recherche")).toBeTruthy();
+        expect(await findByText("Nous cherchons un accompagnateur pour ce trajet.")).toBeTruthy();
     });
 
     it("opens the journey detail when a journey is tapped", async () => {
@@ -91,7 +113,7 @@ describe("JourneysScreen — Integration Tests", () => {
     });
 
     it("shows an empty state when there is no upcoming journey", async () => {
-        getUpcomingMatchedJourneys.mockResolvedValue({ success: true, journeys: [] });
+        getUpcomingJourneys.mockResolvedValue({ success: true, journeys: [] });
 
         const { findByTestId, getByText } = render(<JourneysScreen />);
 
@@ -100,7 +122,7 @@ describe("JourneysScreen — Integration Tests", () => {
     });
 
     it("shows an error when the journeys cannot be loaded", async () => {
-        getUpcomingMatchedJourneys.mockResolvedValue({
+        getUpcomingJourneys.mockResolvedValue({
             success: false,
             message: "Impossible de récupérer vos trajets. Réessayez.",
         });
@@ -116,7 +138,7 @@ describe("JourneysScreen — Integration Tests", () => {
         const { findByText } = render(<JourneysScreen />);
 
         expect(await findByText("Votre session a expiré. Reconnectez-vous.")).toBeTruthy();
-        expect(getUpcomingMatchedJourneys).not.toHaveBeenCalled();
+        expect(getUpcomingJourneys).not.toHaveBeenCalled();
     });
 
     it("shows the travelled journeys when switching to the past tab", async () => {

@@ -206,6 +206,36 @@ async function updateFoundJourneyStatus({ token, foundJourneyId, accept }) {
 }
 
 /**
+ * Fetches the matches of each journey and annotates it with them. A journey left
+ * without a live match is flagged `searching` rather than dropped, so a caller
+ * can tell "nobody found yet" from "not a journey".
+ *
+ * The list endpoint only carries an `isMatched` flag, which stays true once a
+ * match has been declined, so the matches are fetched per journey in parallel.
+ *
+ * @param {{ token: string, journeys: object[] }} params
+ * @returns {Promise<object[]>} The journeys, each carrying `matches`, its
+ * `confirmedMatch` if any, its `pendingCount` and whether it is `searching`.
+ */
+async function withLiveMatches({ token, journeys }) {
+  return Promise.all(
+    journeys.map(async (journey) => {
+      const matchesResult = await getJourneyMatches({ token, journeyId: journey.id });
+      const matches = (matchesResult.matches ?? []).filter(
+        (match) => match?.myStatus !== REJECTED && match?.otherStatus !== REJECTED,
+      );
+      return {
+        ...journey,
+        matches,
+        confirmedMatch: matches.find(isConfirmedMatch) ?? null,
+        pendingCount: matches.filter((match) => match?.myStatus === WAITING).length,
+        searching: matches.length === 0,
+      };
+    }),
+  );
+}
+
+/**
  * Upcoming journeys that have at least one live match (pending or confirmed),
  * sorted by departure time. Each journey carries its non-declined `matches`, the
  * `confirmedMatch` if any, and a `pendingCount` of matches awaiting the user's
@@ -231,23 +261,8 @@ async function getMatchedJourneys({ token, now = new Date(), past = false }) {
     return past ? arrival < now : arrival >= now;
   });
 
-  const withMatches = await Promise.all(
-    upcoming.map(async (journey) => {
-      const matchesResult = await getJourneyMatches({ token, journeyId: journey.id });
-      const matches = (matchesResult.matches ?? []).filter(
-        (match) => match?.myStatus !== REJECTED && match?.otherStatus !== REJECTED,
-      );
-      if (matches.length === 0) {
-        return null;
-      }
-      const confirmedMatch = matches.find(isConfirmedMatch) ?? null;
-      const pendingCount = matches.filter((match) => match?.myStatus === WAITING).length;
-      return { ...journey, matches, confirmedMatch, pendingCount };
-    }),
-  );
-
-  const journeys = withMatches
-    .filter(Boolean)
+  const journeys = (await withLiveMatches({ token, journeys: upcoming }))
+    .filter((journey) => !journey.searching)
     // Upcoming trips read soonest first; past ones read most recent first.
     .sort((a, b) => (past
       ? new Date(b.departureTime) - new Date(a.departureTime)
@@ -266,6 +281,34 @@ async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
 }
 
 /**
+ * Every upcoming journey, including the ones nobody has matched yet.
+ *
+ * Filtering on a live match used to hide a journey the moment it was recorded:
+ * the user saw "no upcoming journey" right after posting one, with nothing
+ * saying it was waiting for a companion. Those journeys come back flagged
+ * `searching` so the list can say so.
+ *
+ * @param {{ token: string, now?: Date }} params
+ * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
+ */
+async function getUpcomingJourneys({ token, now = new Date() }) {
+  const result = await getJourneys({ token });
+  if (!result.success) {
+    return result;
+  }
+
+  const upcoming = result.journeys.filter((journey) => {
+    const arrival = new Date(journey.arrivalTime);
+    return !isNaN(arrival.getTime()) && arrival >= now;
+  });
+
+  const journeys = (await withLiveMatches({ token, journeys: upcoming }))
+    .sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
+
+  return { success: true, journeys };
+}
+
+/**
  * Journeys already travelled, most recent first, so the user keeps a history.
  * @param {{ token: string, now?: Date }} params
  * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
@@ -279,6 +322,7 @@ export {
   getJourneyMatches,
   getJourneys,
   getPastMatchedJourneys,
+  getUpcomingJourneys,
   getUpcomingMatchedJourneys,
   isConfirmedMatch,
   matchState,
