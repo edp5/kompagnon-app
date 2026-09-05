@@ -9,7 +9,10 @@ import { Platform } from "react-native";
 export const colors = {
   // -- Brand palette (from logo) --
   navy: "#1E2C38",
-  teal: "#48AFC4",
+  // The brand teal (#48AFC4) only reaches 2.6:1 under white, so it cannot carry
+  // white text or an icon. This deeper tone does, at 5.5:1, and reads at 5.5:1
+  // as text on a light surface too, so a single teal serves both directions.
+  teal: "#1C7285",
   cream: "#F3EDE6",
   aqua: "#9ED4D9",
 
@@ -22,7 +25,7 @@ export const colors = {
 
   // -- Teal accent --
   tealLight: "#D4EFF3",
-  tealDark: "#2D8FA3",
+  tealDark: "#17606F",
 
   // -- Navy --
   navyLight: "#DDE3E8",
@@ -30,15 +33,15 @@ export const colors = {
   // -- Text --
   text: "#1E2C38",
   textMedium: "#5A6C7A",
-  textLight: "#8FA0AD",
+  textLight: "#5F6F7C",
   textOnDark: "#FFFFFF",
 
   // -- Status --
   success: "#2D9E60",
   successBg: "#D4F0E0",
   successText: "#1A6B3E",
-  warning: "#C48A00",
-  danger: "#D43A3A",
+  warning: "#7A5600",
+  danger: "#C22B2B",
   dangerBg: "rgba(212, 58, 58, 0.09)",
   dangerBorder: "rgba(212, 58, 58, 0.22)",
 };
