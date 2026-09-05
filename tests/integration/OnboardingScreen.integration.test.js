@@ -2,8 +2,10 @@ import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import OnboardingScreen from "../../screens/OnboardingScreen";
 import { markOnboardingSeen } from "../../utils/onboarding";
+import { getSession } from "../../utils/session";
 
 jest.mock("../../utils/onboarding", () => ({ markOnboardingSeen: jest.fn() }));
+jest.mock("../../utils/session", () => ({ getSession: jest.fn() }));
 
 const mockReset = jest.fn();
 jest.mock("@react-navigation/native", () => ({
@@ -14,6 +16,7 @@ describe("OnboardingScreen — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         markOnboardingSeen.mockResolvedValue(undefined);
+        getSession.mockResolvedValue(null);
     });
 
     it("opens on the first step", () => {
@@ -48,6 +51,17 @@ describe("OnboardingScreen — Integration Tests", () => {
         await waitFor(() => {
             expect(markOnboardingSeen).toHaveBeenCalled();
             expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Welcome" }] });
+        });
+    });
+
+    it("returns a signed-in user to the app, not to the sign-in screens", async () => {
+        getSession.mockResolvedValue({ token: "jwt", userId: 12 });
+
+        const { getByTestId } = render(<OnboardingScreen />);
+        fireEvent.press(getByTestId("onboarding-skip"));
+
+        await waitFor(() => {
+            expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Main" }] });
         });
     });
 });

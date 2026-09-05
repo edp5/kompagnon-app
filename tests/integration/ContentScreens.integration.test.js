@@ -93,14 +93,13 @@ describe("Help, privacy, terms and about — Integration Tests", () => {
             expect(getByText("Enregistrez un trajet")).toBeTruthy();
         });
 
-        it("links to the privacy and terms pages", () => {
-            const { getByLabelText } = render(<AboutScreen />);
+        it("does not repeat what the profile menu already offers", () => {
+            const { queryByLabelText } = render(<AboutScreen />);
 
-            fireEvent.press(getByLabelText("Confidentialité"));
-            expect(mockNavigate).toHaveBeenCalledWith("Privacy");
-
-            fireEvent.press(getByLabelText("Conditions d'utilisation"));
-            expect(mockNavigate).toHaveBeenCalledWith("Terms");
+            // Privacy, terms and support all live one level up, in the profile.
+            expect(queryByLabelText("Confidentialité")).toBeNull();
+            expect(queryByLabelText("Conditions d'utilisation")).toBeNull();
+            expect(queryByLabelText("Revoir l'introduction")).toBeNull();
         });
 
         it("goes back", () => {

@@ -1,16 +1,14 @@
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { Image, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import appJson from "../app.json";
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
-import { resetOnboarding } from "../utils/onboarding";
 
 const VERSION = appJson?.expo?.version ?? "1.0.0";
-const SUPPORT_EMAIL = "contact@kompagnon.dev";
 
 const STEPS = [
   { title: "Enregistrez un trajet", text: "Départ, arrivée, horaires : en moins d'une minute." },
@@ -21,18 +19,6 @@ const STEPS = [
 /** About page: who we are, how it works, and what to do next. */
 export default function AboutScreen() {
   const navigation = useNavigation();
-
-  async function replayIntroduction() {
-    await resetOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
-  }
-
-  const LINKS = [
-    { icon: "shield", label: "Confidentialité", onPress: () => navigation.navigate("Privacy") },
-    { icon: "file-text", label: "Conditions d'utilisation", onPress: () => navigation.navigate("Terms") },
-    { icon: "mail", label: "Nous écrire", onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`) },
-    { icon: "play-circle", label: "Revoir l'introduction", onPress: replayIntroduction },
-  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -74,24 +60,6 @@ export default function AboutScreen() {
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>Aller plus loin</Text>
-        <View style={styles.linkCard}>
-          {LINKS.map((link, position) => (
-            <TouchableOpacity
-              key={link.label}
-              style={[styles.linkRow, position < LINKS.length - 1 && styles.linkRowBordered]}
-              onPress={link.onPress}
-              accessibilityRole="button"
-              accessibilityLabel={link.label}
-              testID={`about-link-${position}`}
-            >
-              <Icon name={link.icon} size={18} color={colors.tealDark} />
-              <Text style={styles.linkLabel}>{link.label}</Text>
-              <Icon name="chevron-right" size={18} color={colors.textLight} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
         <Text style={styles.credit}>Fait avec soin pour que se déplacer ne soit plus un obstacle.</Text>
       </ScrollView>
     </SafeAreaView>
@@ -130,10 +98,6 @@ const styles = StyleSheet.create({
   stepBody: { flex: 1 },
   stepTitle: { fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.navy, marginBottom: 2 },
   stepText: { fontSize: 13, fontFamily: fonts.body, color: colors.textMedium, lineHeight: 18 },
-  linkCard: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: "hidden", ...shadow.card },
-  linkRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, paddingHorizontal: 18, minHeight: 56 },
-  linkRowBordered: { borderBottomWidth: 1, borderBottomColor: colors.beige },
-  linkLabel: { flex: 1, fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.navy },
   credit: {
     marginTop: 24, fontSize: 13, fontFamily: fonts.body, color: colors.textLight,
     textAlign: "center", lineHeight: 19,

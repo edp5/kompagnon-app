@@ -6,6 +6,7 @@ import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-na
 import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { markOnboardingSeen } from "../utils/onboarding";
+import { getSession } from "../utils/session";
 
 const SLIDES = [
   {
@@ -41,7 +42,10 @@ export default function OnboardingScreen() {
 
   async function finish() {
     await markOnboardingSeen();
-    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+    // Someone replaying the introduction from the app is already signed in, and
+    // must land back in the app rather than on the sign-in screens.
+    const session = await getSession();
+    navigation.reset({ index: 0, routes: [{ name: session ? "Main" : "Welcome" }] });
   }
 
   function next() {
