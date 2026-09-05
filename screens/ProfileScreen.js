@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
-import { USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../constants";
+import { normalizeRole, USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../constants";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { PLACEHOLDER } from "../utils/format";
 import { clearSession, getSession } from "../utils/session";
@@ -77,6 +77,7 @@ export default function ProfileScreen() {
   const MENU = [
     { label: "Aide & support", icon: "help-circle", screen: "Help" },
     { label: "Confidentialité", icon: "shield", screen: "Privacy" },
+    { label: "Conditions d'utilisation", icon: "file-text", screen: "Terms" },
     { label: "À propos", icon: "info", screen: "About" },
   ];
 
@@ -86,7 +87,7 @@ export default function ProfileScreen() {
     { label: "Nom", value: profile?.lastname ?? PLACEHOLDER },
     { label: "Email", value: profile?.email ?? PLACEHOLDER },
     { label: "Date de naissance", value: profile?.birthday ?? PLACEHOLDER },
-    { label: "Vous êtes", value: USER_ROLES[profile?.role] ?? PLACEHOLDER },
+    { label: "Vous êtes", value: USER_ROLES[normalizeRole(profile?.role)] ?? PLACEHOLDER },
   ];
 
   return (
@@ -135,7 +136,7 @@ export default function ProfileScreen() {
               <View style={styles.rolePill}>
                 <Icon name="user-check" size={13} color={colors.tealDark} />
                 <Text style={styles.rolePillText}>
-                  {USER_ROLES[profile.role] ?? "Rôle non défini"}
+                  {USER_ROLES[normalizeRole(profile.role)] ?? "Rôle non défini"}
                 </Text>
               </View>
             </View>
