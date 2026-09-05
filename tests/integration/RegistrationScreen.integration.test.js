@@ -8,6 +8,7 @@ import { formatBirthdayInput, getPasswordStrength, toIsoDate } from "../../scree
 import { Alert } from "react-native";
 
 import RegistrationScreen from "../../screens/RegistrationScreen";
+import { colors } from "../../theme/tokens";
 import * as apiFetchModule from "../../utils/api-fetch.js";
 
 jest.mock("@env", () => ({
@@ -164,7 +165,7 @@ describe("RegistrationScreen — Integration Tests", () => {
             const result = getPasswordStrength("abc");
             expect(result.level).toBe("weak");
             expect(result.label).toBe("Faible");
-            expect(result.color).toBe("#D43A3A");
+            expect(result.color).toBe(colors.danger);
         });
 
         it("should return 'weak' for a long password with only letters", () => {
@@ -176,14 +177,14 @@ describe("RegistrationScreen — Integration Tests", () => {
             const result = getPasswordStrength(SAISIE_MOYENNE);
             expect(result.level).toBe("fair");
             expect(result.label).toBe("Moyen");
-            expect(result.color).toBe("#C48A00");
+            expect(result.color).toBe(colors.warning);
         });
 
         it("should return 'strong' for a password with letters, numbers, special char >= 10 chars", () => {
             const result = getPasswordStrength(SAISIE_FORTE);
             expect(result.level).toBe("strong");
             expect(result.label).toBe("Fort");
-            expect(result.color).toBe("#48AFC4");
+            expect(result.color).toBe(colors.teal);
         });
     });
 
