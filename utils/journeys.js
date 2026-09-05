@@ -206,6 +206,34 @@ async function updateFoundJourneyStatus({ token, foundJourneyId, accept }) {
 }
 
 /**
+ * Fetches the matches of each journey and drops the ones left without any live
+ * one. The list endpoint only carries an `isMatched` flag (true even while a
+ * match is pending, and still true once every match has been declined), so the
+ * matches are fetched per journey in parallel.
+ * @param {{ token: string, journeys: object[] }} params
+ * @returns {Promise<object[]>} The journeys that still have a live match, each
+ * carrying its `matches`, its `confirmedMatch` if any and its `pendingCount`.
+ */
+async function withLiveMatches({ token, journeys }) {
+  const decorated = await Promise.all(
+    journeys.map(async (journey) => {
+      const matchesResult = await getJourneyMatches({ token, journeyId: journey.id });
+      const matches = (matchesResult.matches ?? []).filter(
+        (match) => match?.myStatus !== REJECTED && match?.otherStatus !== REJECTED,
+      );
+      if (matches.length === 0) {
+        return null;
+      }
+      const confirmedMatch = matches.find(isConfirmedMatch) ?? null;
+      const pendingCount = matches.filter((match) => match?.myStatus === WAITING).length;
+      return { ...journey, matches, confirmedMatch, pendingCount };
+    }),
+  );
+
+  return decorated.filter(Boolean);
+}
+
+/**
  * Upcoming journeys that have at least one live match (pending or confirmed),
  * sorted by departure time. Each journey carries its non-declined `matches`, the
  * `confirmedMatch` if any, and a `pendingCount` of matches awaiting the user's
@@ -231,23 +259,7 @@ async function getMatchedJourneys({ token, now = new Date(), past = false }) {
     return past ? arrival < now : arrival >= now;
   });
 
-  const withMatches = await Promise.all(
-    upcoming.map(async (journey) => {
-      const matchesResult = await getJourneyMatches({ token, journeyId: journey.id });
-      const matches = (matchesResult.matches ?? []).filter(
-        (match) => match?.myStatus !== REJECTED && match?.otherStatus !== REJECTED,
-      );
-      if (matches.length === 0) {
-        return null;
-      }
-      const confirmedMatch = matches.find(isConfirmedMatch) ?? null;
-      const pendingCount = matches.filter((match) => match?.myStatus === WAITING).length;
-      return { ...journey, matches, confirmedMatch, pendingCount };
-    }),
-  );
-
-  const journeys = withMatches
-    .filter(Boolean)
+  const journeys = (await withLiveMatches({ token, journeys: upcoming }))
     // Upcoming trips read soonest first; past ones read most recent first.
     .sort((a, b) => (past
       ? new Date(b.departureTime) - new Date(a.departureTime)
@@ -266,6 +278,56 @@ async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
 }
 
 /**
+ * Everything the home screen shows, from a single pass over the journeys.
+ *
+ * A journey the user posted that nobody has matched yet belongs to `searching`.
+ * The matched lists leave it out, which used to make the home screen answer
+ * "no upcoming journey" to someone who had just recorded one.
+ *
+ * @param {{ token: string, now?: Date }} params
+ * @returns {Promise<{ success: boolean, overview?: object, message?: string }>}
+ */
+async function getHomeOverview({ token, now = new Date() }) {
+  const result = await getJourneys({ token });
+  if (!result.success) {
+    return result;
+  }
+
+  const byDeparture = (a, b) => new Date(a.departureTime) - new Date(b.departureTime);
+
+  const upcoming = result.journeys.filter((journey) => {
+    const arrival = new Date(journey.arrivalTime);
+    return !isNaN(arrival.getTime()) && arrival >= now;
+  });
+
+  const matched = (await withLiveMatches({
+    token,
+    journeys: upcoming.filter((journey) => journey.isMatched),
+  })).sort(byDeparture);
+
+  const matchedIds = new Set(matched.map((journey) => journey.id));
+  const searching = upcoming
+    .filter((journey) => !matchedIds.has(journey.id))
+    .sort(byDeparture);
+
+  // Travelling right now: both sides accepted and the departure time has passed.
+  const ongoing = matched.find(
+    (journey) => journey.confirmedMatch && new Date(journey.departureTime) <= now,
+  ) ?? null;
+
+  return {
+    success: true,
+    overview: {
+      ongoing,
+      next: matched.find((journey) => journey !== ongoing) ?? null,
+      pending: matched.filter((journey) => journey.pendingCount > 0),
+      searching,
+      upcomingCount: matched.length + searching.length,
+    },
+  };
+}
+
+/**
  * Journeys already travelled, most recent first, so the user keeps a history.
  * @param {{ token: string, now?: Date }} params
  * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
@@ -275,6 +337,7 @@ async function getPastMatchedJourneys({ token, now = new Date() }) {
 }
 
 export {
+  getHomeOverview,
   getJourney,
   getJourneyMatches,
   getJourneys,
