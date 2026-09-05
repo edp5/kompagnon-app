@@ -13,14 +13,15 @@ import { colors } from "../theme/tokens";
  * base map can be a muted style that lets the brand-coloured overlays read.
  * The style comes from OpenFreeMap, which needs no account or API key.
  *
- * @param {{ mine: {departure: Point, arrival: Point}, other?: {departure: Point, arrival: Point}, meeting?: Point }} data
+ * @param {{ mine: {departure: Point, arrival: Point}, other?: {departure: Point, arrival: Point}, meeting?: Point, positions?: object[] }} data
  * @returns {string} HTML document.
  */
-function buildHtml({ mine, other, meeting }) {
+function buildHtml({ mine, other, meeting, positions }) {
   const config = JSON.stringify({
     mine,
     other: other ?? null,
     meeting: meeting ?? null,
+    positions: positions ?? [],
     palette: {
       teal: colors.teal,
       tealDark: colors.tealDark,
@@ -44,6 +45,11 @@ function buildHtml({ mine, other, meeting }) {
     width: 16px; height: 16px; border-radius: 50%;
     border: 3px solid ${colors.surface};
     box-shadow: 0 1px 4px rgba(30,44,56,0.35);
+  }
+  .live {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid ${colors.surface};
+    box-shadow: 0 0 0 6px rgba(72,175,196,0.28), 0 2px 6px rgba(30,44,56,0.35);
   }
   .rv-pin {
     display: flex; align-items: center; justify-content: center;
@@ -124,6 +130,17 @@ function buildHtml({ mine, other, meeting }) {
       points.push(m);
       marker('rv-pin', m, 'Point de rendez-vous', 'RV');
     }
+
+    (C.positions || []).forEach(function (p) {
+      if (p.lat == null || p.lon == null) { return; }
+      var at = [Number(p.lon), Number(p.lat)];
+      points.push(at);
+      var el = document.createElement('div');
+      el.className = 'live';
+      el.style.background = p.mine ? C.palette.tealDark : C.palette.teal;
+      el.title = (p.mine ? 'Votre position' : (p.firstname || 'Votre binôme') + ' est ici');
+      new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map);
+    });
 
     if (points.length > 1) {
       var bounds = points.reduce(function (acc, p) { return acc.extend(p); },

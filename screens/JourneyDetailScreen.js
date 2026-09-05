@@ -15,6 +15,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
+import JourneyFollowCard from "../components/JourneyFollowCard";
 import JourneyMap from "../components/JourneyMap";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
@@ -31,6 +32,7 @@ export default function JourneyDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [respondingId, setRespondingId] = useState(null);
+  const [livePositions, setLivePositions] = useState([]);
 
   const handleCall = useCallback((phoneNumber) => {
     const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
@@ -100,6 +102,7 @@ export default function JourneyDetailScreen() {
     load();
   }, [load]);
 
+  const confirmedMatch = matches.find((item) => matchState(item).confirmed) ?? null;
   const otherTrip = matches.map((item) => item.journey).find((trip) => trip && trip.departureLat != null);
   const mapMine = journey && journey.departureLat != null
     ? {
@@ -194,8 +197,17 @@ export default function JourneyDetailScreen() {
                   mine={mapMine}
                   other={mapOther}
                   meeting={mapMine.departure}
+                  positions={livePositions}
                 />
               </>
+            )}
+
+            {confirmedMatch && (
+              <JourneyFollowCard
+                foundJourneyId={confirmedMatch.foundJourneyId}
+                otherName={confirmedMatch.user?.firstname}
+                onPositions={setLivePositions}
+              />
             )}
 
             <Text style={styles.sectionTitle}>

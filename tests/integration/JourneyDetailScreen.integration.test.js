@@ -20,6 +20,13 @@ jest.mock("../../utils/session", () => ({
     getSession: jest.fn(),
 }));
 
+// The follow card lives on a confirmed match; keep it inert in these tests.
+jest.mock("../../utils/following", () => ({
+    getPositions: jest.fn().mockResolvedValue({ success: true, positions: [] }),
+    recordPosition: jest.fn(),
+    createShareLink: jest.fn(),
+}));
+
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
 jest.mock("@react-navigation/native", () => ({
