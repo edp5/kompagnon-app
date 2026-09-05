@@ -3,10 +3,11 @@ import { Alert } from "react-native";
 
 import ProfileScreen from "../../screens/ProfileScreen";
 import { clearSession, getSession } from "../../utils/session";
-import { getUserProfile } from "../../utils/users";
+import { getUserProfile, setTrustedContact } from "../../utils/users";
 
 jest.mock("../../utils/users", () => ({
     getUserProfile: jest.fn(),
+    setTrustedContact: jest.fn(),
 }));
 
 jest.mock("../../utils/session", () => ({
@@ -114,6 +115,36 @@ describe("ProfileScreen — Integration Tests", () => {
         fireEvent.press(await findByText("Réessayer"));
 
         expect(await findByText("Alice Martin")).toBeTruthy();
+    });
+
+    it("shows the trusted contact section", async () => {
+        const { findByTestId } = render(<ProfileScreen />);
+
+        expect(await findByTestId("trusted-contact")).toBeTruthy();
+    });
+
+    it("shows a trusted contact already recorded", async () => {
+        getUserProfile.mockResolvedValue({
+            success: true,
+            profile: { ...PROFILE, trustedContact: { name: "Camille", phoneNumber: "0612345678" } },
+        });
+
+        const { findByTestId } = render(<ProfileScreen />);
+
+        expect((await findByTestId("trusted-contact-current")).props.children).toBe("Camille · 0612345678");
+    });
+
+    it("shows the contact straight away once it is recorded", async () => {
+        const trustedContact = { name: "Camille", phoneNumber: "0612345678" };
+        setTrustedContact.mockResolvedValue({ success: true, trustedContact });
+
+        const { findByTestId, getByTestId } = render(<ProfileScreen />);
+        fireEvent.press(await findByTestId("trusted-contact-add"));
+        fireEvent.changeText(getByTestId("trusted-contact-name"), "Camille");
+        fireEvent.changeText(getByTestId("trusted-contact-phone"), "0612345678");
+        fireEvent.press(getByTestId("trusted-contact-save"));
+
+        expect((await findByTestId("trusted-contact-current")).props.children).toBe("Camille · 0612345678");
     });
 
     it("asks for confirmation before logging out", async () => {

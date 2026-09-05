@@ -44,6 +44,7 @@ const PAIRINGS = [
   ["the pending badge", colors.warning, colors.sand],
   ["an error on the page", colors.danger, colors.bg],
   ["an error on a card", colors.danger, colors.surface],
+  ["the alert button label", colors.textOnDark, colors.danger],
 ];
 
 describe("Unit | Theme | contrast", () => {

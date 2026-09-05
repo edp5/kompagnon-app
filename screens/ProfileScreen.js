@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
+import TrustedContactCard from "../components/TrustedContactCard";
 import { normalizeRole, USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../constants";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { PLACEHOLDER } from "../utils/format";
@@ -168,6 +169,12 @@ export default function ProfileScreen() {
                 </View>
               </>
             )}
+
+            <Text style={styles.sectionTitle}>Sécurité</Text>
+            <TrustedContactCard
+              contact={profile.trustedContact}
+              onChange={(trustedContact) => setProfile((current) => ({ ...current, trustedContact }))}
+            />
 
             <Text style={styles.sectionTitle}>Plus</Text>
             <View style={styles.menuCard}>

@@ -4,6 +4,7 @@ import { AccessibilityInfo, Alert, Linking } from "react-native";
 import JourneyDetailScreen from "../../screens/JourneyDetailScreen";
 import { getJourney, getJourneyMatches, updateFoundJourneyStatus } from "../../utils/journeys";
 import { getSession } from "../../utils/session";
+import { getUserProfile } from "../../utils/users";
 
 jest.mock("../../utils/journeys", () => {
     const actual = jest.requireActual("../../utils/journeys");
@@ -18,6 +19,10 @@ jest.mock("../../utils/journeys", () => {
 
 jest.mock("../../utils/session", () => ({
     getSession: jest.fn(),
+}));
+
+jest.mock("../../utils/users", () => ({
+    getUserProfile: jest.fn(),
 }));
 
 // The follow card lives on a confirmed match; keep it inert in these tests.
@@ -86,6 +91,7 @@ describe("JourneyDetailScreen — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
+        getUserProfile.mockResolvedValue({ success: true, profile: { trustedContact: null } });
         getJourney.mockResolvedValue({ success: true, journey: JOURNEY });
         mockMatches([CONFIRMED_MATCH]);
         updateFoundJourneyStatus.mockResolvedValue({ success: true });
@@ -113,6 +119,23 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         expect(getByText("Trajet confirmé")).toBeTruthy();
         expect(queryByText("0622222222")).toBeNull();
         expect(getByText("Appeler")).toBeTruthy();
+    });
+
+    it("offers to warn the trusted contact during a confirmed journey", async () => {
+        getUserProfile.mockResolvedValue({
+            success: true,
+            profile: { trustedContact: { name: "Camille", phoneNumber: "0612345678" } },
+        });
+
+        const { findByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Prévenir Camille")).toBeTruthy();
+    });
+
+    it("points to the profile when no trusted contact is set", async () => {
+        const { findByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Ajouter un contact de confiance")).toBeTruthy();
     });
 
     it("shows the meeting code of a confirmed match", async () => {
