@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "KOMPAGNON_API_URL": "http://localhost:3000"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "KOMPAGNON_API_URL": "https://staging.kompagnon.dev"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "KOMPAGNON_API_URL": "https://api.kompagnon.dev"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

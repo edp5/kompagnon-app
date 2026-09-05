@@ -24,13 +24,16 @@ import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import HelpScreen from "./screens/HelpScreen";
 import JourneyDetailScreen from "./screens/JourneyDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
 import PrivacyScreen from "./screens/PrivacyScreen";
 import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
 import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import TermsScreen from "./screens/TermsScreen";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import { colors } from "./theme/tokens";
 import { checkHealth } from "./utils/api-fetch";
+import { hasSeenOnboarding } from "./utils/onboarding";
 import { clearSession, getSession } from "./utils/session";
 import { getUserProfile } from "./utils/users";
 
@@ -89,6 +92,9 @@ export default function App() {
     // A stored token only means the user was logged in before. Verify it is
     // still valid by fetching the profile: an expired or revoked token must not
     // land the user on the authenticated app (issue #125).
+    // A visitor who has never seen the introduction gets it before anything else.
+    const entryScreen = (await hasSeenOnboarding()) ? "Welcome" : "Onboarding";
+
     const session = await getSession();
     if (session) {
       const profile = await getUserProfile({ token: session.token });
@@ -96,10 +102,10 @@ export default function App() {
         setInitialRoute("Main");
       } else {
         await clearSession();
-        setInitialRoute("Welcome");
+        setInitialRoute(entryScreen);
       }
     } else {
-      setInitialRoute("Welcome");
+      setInitialRoute(entryScreen);
     }
     setApiStatus("ready");
   }, []);
@@ -127,6 +133,7 @@ export default function App() {
           initialRouteName={initialRoute}
           screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
         >
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Register" component={RegistrationScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -138,6 +145,7 @@ export default function App() {
           <Stack.Screen name="ActivateAccount" component={ActivateAccountScreen} />
           <Stack.Screen name="Help" component={HelpScreen} />
           <Stack.Screen name="Privacy" component={PrivacyScreen} />
+          <Stack.Screen name="Terms" component={TermsScreen} />
           <Stack.Screen name="About" component={AboutScreen} />
         </Stack.Navigator>
       </NavigationContainer>

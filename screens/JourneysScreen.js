@@ -14,12 +14,13 @@ import {
 import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
-import { getUpcomingMatchedJourneys } from "../utils/journeys";
+import { getPastMatchedJourneys, getUpcomingMatchedJourneys } from "../utils/journeys";
 import { getSession } from "../utils/session";
 
 export default function JourneysScreen() {
   const navigation = useNavigation();
 
+  const [tab, setTab] = useState("upcoming");
   const [journeys, setJourneys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,7 +42,8 @@ export default function JourneysScreen() {
       return;
     }
 
-    const result = await getUpcomingMatchedJourneys({ token: session.token });
+    const fetchJourneys = tab === "past" ? getPastMatchedJourneys : getUpcomingMatchedJourneys;
+    const result = await fetchJourneys({ token: session.token });
     if (result.success) {
       setJourneys(result.journeys);
     } else {
@@ -49,7 +51,7 @@ export default function JourneysScreen() {
     }
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [tab]);
 
   const onRefresh = useCallback(() => load({ refresh: true }), [load]);
 
@@ -70,8 +72,36 @@ export default function JourneysScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Mes prochains trajets</Text>
-          <Text style={styles.subtitle}>Vos accompagnements et demandes à confirmer</Text>
+          <Text style={styles.title}>Mes trajets</Text>
+          <Text style={styles.subtitle}>
+            {tab === "past"
+              ? "Les accompagnements que vous avez déjà effectués"
+              : "Vos accompagnements et demandes à confirmer"}
+          </Text>
+        </View>
+
+        <View style={styles.segmented} accessibilityRole="tablist">
+          {[
+            { key: "upcoming", label: "À venir" },
+            { key: "past", label: "Passés" },
+          ].map((item) => {
+            const selected = tab === item.key;
+            return (
+              <TouchableOpacity
+                key={item.key}
+                style={[styles.segment, selected && styles.segmentSelected]}
+                onPress={() => setTab(item.key)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={item.label}
+                testID={`journeys-tab-${item.key}`}
+              >
+                <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {loading && (
@@ -108,9 +138,13 @@ export default function JourneysScreen() {
         {!loading && !error && journeys.length === 0 && (
           <View style={styles.emptyCard} testID="journeys-empty">
             <Icon name="calendar" size={22} color={colors.textLight} />
-            <Text style={styles.emptyTitle}>Aucun trajet à venir</Text>
+            <Text style={styles.emptyTitle}>
+              {tab === "past" ? "Aucun trajet passé" : "Aucun trajet à venir"}
+            </Text>
             <Text style={styles.emptyText}>
-              Vos trajets apparaîtront ici dès qu&apos;une correspondance sera trouvée.
+              {tab === "past"
+                ? "Vos accompagnements terminés seront conservés ici."
+                : "Vos trajets apparaîtront ici dès qu'une correspondance sera trouvée."}
             </Text>
           </View>
         )}
@@ -256,6 +290,33 @@ const styles = StyleSheet.create({
     color: colors.textMedium,
     textAlign: "center",
     lineHeight: 20,
+  },
+  segmented: {
+    flexDirection: "row",
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderRadius: radius.full,
+    padding: 4,
+    marginBottom: 18,
+    ...shadow.card,
+  },
+  segment: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    borderRadius: radius.full,
+  },
+  segmentSelected: {
+    backgroundColor: colors.teal,
+  },
+  segmentText: {
+    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+    color: colors.textMedium,
+  },
+  segmentTextSelected: {
+    color: colors.textOnDark,
   },
   journeyCard: {
     backgroundColor: colors.surface,

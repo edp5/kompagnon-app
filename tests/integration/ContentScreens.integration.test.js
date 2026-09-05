@@ -3,6 +3,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import AboutScreen from "../../screens/AboutScreen";
 import HelpScreen from "../../screens/HelpScreen";
 import PrivacyScreen from "../../screens/PrivacyScreen";
+import TermsScreen from "../../screens/TermsScreen";
 
 const mockGoBack = jest.fn();
 jest.mock("@react-navigation/native", () => ({
@@ -34,6 +35,13 @@ describe("Content screens — Integration Tests", () => {
 
         expect(getByTestId("about-screen")).toBeTruthy();
         expect(getByText(/Kompagnon mobile \d+\.\d+\.\d+/)).toBeTruthy();
+    });
+
+    it("shows the terms of use", () => {
+        const { getByTestId, getByText } = render(<TermsScreen />);
+
+        expect(getByTestId("terms-screen")).toBeTruthy();
+        expect(getByText("Objet du service")).toBeTruthy();
     });
 
     it("goes back from a content page", () => {
