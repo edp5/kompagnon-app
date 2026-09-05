@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { colors, radius } from "../theme/tokens";
@@ -19,12 +19,43 @@ export default function JourneyMap({ mine, other, meeting, height = 220 }) {
 
   return (
     <View style={[styles.container, { height }]} accessible accessibilityLabel={label}>
-      <iframe
-        title={label}
-        srcDoc={buildHtml({ mine, other, meeting })}
-        style={{ border: "none", width: "100%", height: "100%" }}
-      />
+      <MapFrame html={buildHtml({ mine, other, meeting })} title={label} />
     </View>
+  );
+}
+
+/**
+ * Serves the map document from a blob URL rather than `srcDoc`. A `srcdoc`
+ * iframe has an opaque origin, and MapLibre's tile workers cannot fetch through
+ * it; a blob URL inherits the page's origin, so they can.
+ * @param {{ html: string, title: string }} props
+ */
+function MapFrame({ html, title }) {
+  const blobUrl = useMemo(() => {
+    if (typeof URL === "undefined" || typeof Blob === "undefined") {
+      return null;
+    }
+    return URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  }, [html]);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
+
+  if (!blobUrl) {
+    return null;
+  }
+
+  return (
+    <iframe
+      title={title}
+      src={blobUrl}
+      style={{ border: "none", width: "100%", height: "100%" }}
+    />
   );
 }
 
