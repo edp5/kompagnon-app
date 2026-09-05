@@ -86,6 +86,16 @@ export default function JourneyDetailScreen() {
     [load],
   );
 
+  const openChat = useCallback(
+    (match) => {
+      navigation.navigate("Chat", {
+        foundJourneyId: match.foundJourneyId,
+        otherName: [match.user?.firstname, match.user?.lastname].filter(Boolean).join(" ") || "Votre binôme",
+      });
+    },
+    [navigation],
+  );
+
   useEffect(() => {
     load();
   }, [load]);
@@ -200,6 +210,7 @@ export default function JourneyDetailScreen() {
                   responding={respondingId === item.foundJourneyId}
                   onRespond={onRespond}
                   onCall={handleCall}
+                  onChat={openChat}
                 />
               ))
             ) : (
@@ -222,7 +233,7 @@ export default function JourneyDetailScreen() {
  * button; matches still awaiting the user's answer expose accept/reject buttons.
  * @param {{ match: object, responding: boolean, onRespond: Function, onCall: Function }} props
  */
-function MatchCard({ match, responding, onRespond, onCall }) {
+function MatchCard({ match, responding, onRespond, onCall, onChat }) {
   const state = matchState(match);
   const firstname = match.user?.firstname;
   const fullName = [firstname, match.user?.lastname].filter(Boolean).join(" ") || "votre binôme";
@@ -280,6 +291,17 @@ function MatchCard({ match, responding, onRespond, onCall }) {
           <Text style={styles.otherTripTime}>{formatTime(match.journey?.arrivalTime)}</Text>
         </View>
       </View>
+
+      <TouchableOpacity
+        style={styles.chatButton}
+        onPress={() => onChat(match)}
+        accessibilityRole="button"
+        accessibilityLabel={`Discuter avec ${firstname ?? "votre binôme"}`}
+        testID={`match-chat-${match.foundJourneyId}`}
+      >
+        <Icon name="message-circle" size={16} color={colors.tealDark} />
+        <Text style={styles.chatButtonText}>Discuter</Text>
+      </TouchableOpacity>
 
       {state.confirmed &&
         (match.user?.phoneNumber ? (
@@ -480,6 +502,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fonts.bodyBold,
     color: colors.successText,
+  },
+  chatButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    minHeight: 46,
+    paddingVertical: 12,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.tealLight,
+    backgroundColor: colors.surface,
+  },
+  chatButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    color: colors.tealDark,
   },
   callButton: {
     flexDirection: "row",

@@ -21,8 +21,9 @@ jest.mock("../../utils/session", () => ({
 }));
 
 const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ goBack: mockGoBack }),
+    useNavigation: () => ({ goBack: mockGoBack, navigate: mockNavigate }),
     useRoute: () => ({ params: { journeyId: 8 } }),
 }));
 
@@ -214,6 +215,17 @@ describe("JourneyDetailScreen — Integration Tests", () => {
 
         expect(await findByText("Vous avez accepté. En attente de la réponse de l'autre personne.")).toBeTruthy();
         expect(queryByText("Accepter")).toBeNull();
+    });
+
+    it("opens the conversation with the matched user", async () => {
+        const { findByTestId } = render(<JourneyDetailScreen />);
+
+        fireEvent.press(await findByTestId("match-chat-1"));
+
+        expect(mockNavigate).toHaveBeenCalledWith("Chat", {
+            foundJourneyId: 1,
+            otherName: "Bob Durand",
+        });
     });
 
     it("tells the user when there is no match yet", async () => {
