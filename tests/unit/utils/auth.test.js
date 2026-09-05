@@ -116,6 +116,33 @@ describe("Unit | Utils | activateAccount", () => {
     expect((await activateAccount({ token: "t", phoneNumber: "0612345678", role: "companion" })).success).toBe(false);
   });
 
+  it("explains that the phone number is already taken on 409", async () => {
+    apiFetch.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ message: "Phone number is already used" }),
+    });
+
+    const result = await activateAccount({ token: "t", phoneNumber: "0612345678", role: "passenger" });
+
+    expect(result).toEqual({
+      success: false,
+      message: "Ce numéro est déjà utilisé par un autre compte.",
+    });
+  });
+
+  it("explains that the account is already active on 409", async () => {
+    apiFetch.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ message: "User is already active" }),
+    });
+
+    const result = await activateAccount({ token: "t", phoneNumber: "0612345678", role: "passenger" });
+
+    expect(result.message).toBe("Ce compte est déjà activé. Vous pouvez vous connecter.");
+  });
+
   it("reports a failure when the request throws", async () => {
     apiFetch.mockRejectedValue(new Error("network"));
 

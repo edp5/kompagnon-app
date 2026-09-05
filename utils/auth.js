@@ -73,6 +73,18 @@ async function activateAccount({ token, phoneNumber, role }) {
     if (response && (response.status === 401 || response.status === 403)) {
       return { success: false, message: "Ce lien d'activation est invalide ou expiré." };
     }
+    if (response && response.status === 409) {
+      // The API answers 409 both for an already-active account and for a phone
+      // number taken by someone else; the message tells the two apart.
+      const data = await response.json().catch(() => null);
+      const alreadyActive = /already active/i.test(data?.message ?? "");
+      return {
+        success: false,
+        message: alreadyActive
+          ? "Ce compte est déjà activé. Vous pouvez vous connecter."
+          : "Ce numéro est déjà utilisé par un autre compte.",
+      };
+    }
     return { success: false, message: "Impossible d'activer le compte. Réessayez." };
   } catch {
     return { success: false, message: UNREACHABLE };
