@@ -72,6 +72,14 @@ describe("Unit | Utils | getPositions", () => {
 
     expect((await getPositions({ token: "jwt", foundJourneyId: 3 })).success).toBe(false);
   });
+
+  it("reports a generic failure otherwise", async () => {
+    apiFetch.mockResolvedValue({ ok: false, status: 500 });
+
+    expect((await getPositions({ token: "jwt", foundJourneyId: 3 })).message).toBe(
+      "Impossible de récupérer les positions.",
+    );
+  });
 });
 
 describe("Unit | Utils | createShareLink", () => {
@@ -97,6 +105,14 @@ describe("Unit | Utils | createShareLink", () => {
 
     expect((await createShareLink({ token: "jwt", foundJourneyId: 3 })).message).toBe(
       "Impossible de créer le lien de suivi.",
+    );
+  });
+
+  it("reports an expired session on 401", async () => {
+    apiFetch.mockResolvedValue({ ok: false, status: 401 });
+
+    expect((await createShareLink({ token: "jwt", foundJourneyId: 3 })).message).toBe(
+      "Session expirée. Reconnectez-vous.",
     );
   });
 

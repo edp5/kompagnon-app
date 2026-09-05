@@ -1,5 +1,5 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import { Share } from "react-native";
+import { Alert, Share } from "react-native";
 
 import JourneyFollowCard from "../../components/JourneyFollowCard";
 import { createShareLink, getPositions, recordPosition } from "../../utils/following";
@@ -111,5 +111,48 @@ describe("JourneyFollowCard — Integration Tests", () => {
 
         expect(await findByText("Impossible de créer le lien de suivi.")).toBeTruthy();
         expect(Share.share).not.toHaveBeenCalled();
+    });
+
+    it("falls back to showing the link when the share sheet cannot open", async () => {
+        jest.spyOn(Alert, "alert").mockImplementation(() => {});
+        Share.share.mockRejectedValue(new Error("no share sheet"));
+
+        const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Bob" />);
+        fireEvent.press(await findByTestId("follow-share-button"));
+
+        await waitFor(() => {
+            expect(Alert.alert).toHaveBeenCalledWith("Lien de suivi", "http://web/#/suivi/abc");
+        });
+    });
+
+    describe("without a session", () => {
+        beforeEach(() => {
+            getSession.mockResolvedValue(null);
+        });
+
+        it("reads nothing rather than calling the API without a token", async () => {
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Bob" />);
+            await findByTestId("journey-follow-card");
+
+            expect(getPositions).not.toHaveBeenCalled();
+        });
+
+        it("reports nothing when the user turns sharing on", async () => {
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Bob" />);
+            fireEvent(await findByTestId("follow-position-switch"), "valueChange", true);
+
+            await waitFor(() => {
+                expect(getSession).toHaveBeenCalled();
+            });
+            expect(recordPosition).not.toHaveBeenCalled();
+        });
+
+        it("asks the user to reconnect instead of creating a link", async () => {
+            const { findByTestId, findByText } = render(<JourneyFollowCard foundJourneyId={3} otherName="Bob" />);
+            fireEvent.press(await findByTestId("follow-share-button"));
+
+            expect(await findByText("Votre session a expiré. Reconnectez-vous.")).toBeTruthy();
+            expect(createShareLink).not.toHaveBeenCalled();
+        });
     });
 });
