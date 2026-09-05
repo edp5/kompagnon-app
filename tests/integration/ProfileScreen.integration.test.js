@@ -1,4 +1,5 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { Alert } from "react-native";
 
 import ProfileScreen from "../../screens/ProfileScreen";
 import { clearSession, getSession } from "../../utils/session";
@@ -14,8 +15,9 @@ jest.mock("../../utils/session", () => ({
 }));
 
 const mockReset = jest.fn();
+const mockNavigate = jest.fn();
 jest.mock("@react-navigation/native", () => ({
-    useNavigation: () => ({ reset: mockReset }),
+    useNavigation: () => ({ reset: mockReset, navigate: mockNavigate }),
 }));
 
 const PROFILE = {
@@ -30,6 +32,10 @@ const PROFILE = {
 };
 
 describe("ProfileScreen — Integration Tests", () => {
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
@@ -110,14 +116,50 @@ describe("ProfileScreen — Integration Tests", () => {
         expect(await findByText("Alice Martin")).toBeTruthy();
     });
 
-    it("clears the session and returns to Login on logout", async () => {
+    it("asks for confirmation before logging out", async () => {
+        const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+
         const { findByText } = render(<ProfileScreen />);
         fireEvent.press(await findByText("Se déconnecter"));
 
+        expect(alertSpy).toHaveBeenCalledWith(
+            "Se déconnecter",
+            "Voulez-vous vraiment vous déconnecter ?",
+            expect.arrayContaining([
+                expect.objectContaining({ text: "Annuler" }),
+                expect.objectContaining({ text: "Se déconnecter" }),
+            ]),
+        );
+        // Nothing happens until the user confirms.
+        expect(clearSession).not.toHaveBeenCalled();
+    });
+
+    it("clears the session and returns to the welcome screen once confirmed", async () => {
+        const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+
+        const { findByText } = render(<ProfileScreen />);
+        fireEvent.press(await findByText("Se déconnecter"));
+
+        const confirm = alertSpy.mock.calls[0][2].find((button) => button.text === "Se déconnecter");
+        await confirm.onPress();
+
         await waitFor(() => {
-            expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Login" }] });
+            expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Welcome" }] });
         });
         expect(clearSession).toHaveBeenCalled();
+    });
+
+    it("opens the help, privacy and about pages from the more section", async () => {
+        const { findByLabelText, getByLabelText } = render(<ProfileScreen />);
+
+        fireEvent.press(await findByLabelText("Aide & support"));
+        expect(mockNavigate).toHaveBeenCalledWith("Help");
+
+        fireEvent.press(getByLabelText("Confidentialité"));
+        expect(mockNavigate).toHaveBeenCalledWith("Privacy");
+
+        fireEvent.press(getByLabelText("À propos"));
+        expect(mockNavigate).toHaveBeenCalledWith("About");
     });
 
 });

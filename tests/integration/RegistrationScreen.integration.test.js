@@ -441,10 +441,11 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             await waitFor(() => {
                 expect(Alert.alert).toHaveBeenCalledWith(
-                    "Succès",
-                    "Compte créé avec succès !",
+                    "Compte créé",
+                    "Un email d'activation vient de vous être envoyé. Activez votre compte pour choisir votre rôle et pouvoir vous connecter.",
                     expect.arrayContaining([
-                        expect.objectContaining({ text: "OK" }),
+                        expect.objectContaining({ text: "Plus tard" }),
+                        expect.objectContaining({ text: "Activer maintenant" }),
                     ])
                 );
             });

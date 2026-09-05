@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -60,10 +61,24 @@ export default function ProfileScreen() {
     load();
   }, [load]);
 
-  const handleLogout = async () => {
+  const signOut = useCallback(async () => {
     await clearSession();
-    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
+  }, [navigation]);
+
+  // Logging out drops the session, so ask before doing it.
+  const handleLogout = () => {
+    Alert.alert("Se déconnecter", "Voulez-vous vraiment vous déconnecter ?", [
+      { text: "Annuler", style: "cancel" },
+      { text: "Se déconnecter", style: "destructive", onPress: signOut },
+    ]);
   };
+
+  const MENU = [
+    { label: "Aide & support", icon: "help-circle", screen: "Help" },
+    { label: "Confidentialité", icon: "shield", screen: "Privacy" },
+    { label: "À propos", icon: "info", screen: "About" },
+  ];
 
   const rows = [
     { label: "Civilité", value: USER_GENRE[profile?.genre] ?? PLACEHOLDER },
@@ -153,6 +168,24 @@ export default function ProfileScreen() {
               </>
             )}
 
+            <Text style={styles.sectionTitle}>Plus</Text>
+            <View style={styles.menuCard}>
+              {MENU.map((item, index) => (
+                <TouchableOpacity
+                  key={item.screen}
+                  style={[styles.menuRow, index < MENU.length - 1 && styles.menuRowBordered]}
+                  onPress={() => navigation.navigate(item.screen)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
+                  testID={`profile-menu-${item.screen}`}
+                >
+                  <Icon name={item.icon} size={18} color={colors.tealDark} />
+                  <Text style={styles.menuLabel}>{item.label}</Text>
+                  <Icon name="chevron-right" size={18} color={colors.textLight} />
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
@@ -170,6 +203,31 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  menuCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    marginBottom: 24,
+    overflow: "hidden",
+    ...shadow.card,
+  },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    minHeight: 56,
+  },
+  menuRowBordered: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.beige,
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.navy,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.bg,

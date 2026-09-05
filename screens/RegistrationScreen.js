@@ -180,9 +180,14 @@ export default function RegistrationScreen() {
       });
 
       if (response && response.ok) {
-        Alert.alert("Succès", "Compte créé avec succès !", [
-          { text: "OK", onPress: () => navigation.navigate("Login") },
-        ]);
+        Alert.alert(
+          "Compte créé",
+          "Un email d'activation vient de vous être envoyé. Activez votre compte pour choisir votre rôle et pouvoir vous connecter.",
+          [
+            { text: "Plus tard", style: "cancel", onPress: () => navigation.navigate("Login") },
+            { text: "Activer maintenant", onPress: () => navigation.navigate("ActivateAccount") },
+          ],
+        );
       } else if (response && response.status === 409) {
         setErrorWithShake("Cet email est déjà utilisé.");
       } else {

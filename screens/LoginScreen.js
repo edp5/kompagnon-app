@@ -139,8 +139,16 @@ export default function LoginScreen() {
             />
 
             <Text style={styles.hint}>
-              Votre compte doit être activé via l'e-mail reçu après inscription.
+              Votre compte doit être activé via l&apos;e-mail reçu après inscription.
             </Text>
+            <TouchableOpacity
+              style={styles.forgotLink}
+              onPress={() => navigation.navigate("ActivateAccount")}
+              accessibilityRole="button"
+              accessibilityLabel="Activer mon compte"
+            >
+              <Text style={styles.forgotLinkText}>Activer mon compte</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
@@ -158,13 +166,22 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.forgotLink}
+              onPress={() => navigation.navigate("ForgotPassword")}
+              accessibilityRole="button"
+              accessibilityLabel="Mot de passe oublié"
+            >
+              <Text style={styles.forgotLinkText}>Mot de passe oublié ?</Text>
+            </TouchableOpacity>
+
             <View style={styles.signupLinkContainer}>
               <Text style={styles.signupLinkText}>Pas encore de compte ? </Text>
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() => navigation.navigate("Register")}
               >
-                <Text style={styles.signupLinkHighlight}>S'inscrire</Text>
+                <Text style={styles.signupLinkHighlight}>S&apos;inscrire</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -175,6 +192,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  forgotLink: {
+    alignSelf: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  forgotLinkText: {
+    color: colors.tealDark,
+    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.bg,
