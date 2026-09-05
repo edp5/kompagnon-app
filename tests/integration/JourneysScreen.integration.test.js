@@ -1,11 +1,12 @@
 import { fireEvent, render } from "@testing-library/react-native";
 
 import JourneysScreen from "../../screens/JourneysScreen";
-import { getUpcomingMatchedJourneys } from "../../utils/journeys";
+import { getPastMatchedJourneys, getUpcomingMatchedJourneys } from "../../utils/journeys";
 import { getSession } from "../../utils/session";
 
 jest.mock("../../utils/journeys", () => ({
     getUpcomingMatchedJourneys: jest.fn(),
+    getPastMatchedJourneys: jest.fn(),
 }));
 
 jest.mock("../../utils/session", () => ({
@@ -59,6 +60,7 @@ describe("JourneysScreen — Integration Tests", () => {
         jest.clearAllMocks();
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
         getUpcomingMatchedJourneys.mockResolvedValue({ success: true, journeys: [CONFIRMED_JOURNEY] });
+        getPastMatchedJourneys.mockResolvedValue({ success: true, journeys: [] });
     });
 
     it("lists a confirmed journey with the other user", async () => {
@@ -115,5 +117,25 @@ describe("JourneysScreen — Integration Tests", () => {
 
         expect(await findByText("Votre session a expiré. Reconnectez-vous.")).toBeTruthy();
         expect(getUpcomingMatchedJourneys).not.toHaveBeenCalled();
+    });
+
+    it("shows the travelled journeys when switching to the past tab", async () => {
+        getPastMatchedJourneys.mockResolvedValue({
+            success: true,
+            journeys: [{ ...CONFIRMED_JOURNEY, id: 4, departureAddress: "Ancien départ, Paris" }],
+        });
+
+        const { findByTestId, findByText } = render(<JourneysScreen />);
+        fireEvent.press(await findByTestId("journeys-tab-past"));
+
+        expect(await findByText("Ancien départ, Paris")).toBeTruthy();
+        expect(getPastMatchedJourneys).toHaveBeenCalledWith({ token: "jwt" });
+    });
+
+    it("tells the user when nothing has been travelled yet", async () => {
+        const { findByTestId, findByText } = render(<JourneysScreen />);
+        fireEvent.press(await findByTestId("journeys-tab-past"));
+
+        expect(await findByText("Aucun trajet passé")).toBeTruthy();
     });
 });

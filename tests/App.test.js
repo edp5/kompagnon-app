@@ -2,6 +2,7 @@ import { render } from "@testing-library/react-native";
 
 import App from "../App.js";
 import { checkHealth } from "../utils/api-fetch";
+import { hasSeenOnboarding } from "../utils/onboarding";
 import { clearSession, getSession } from "../utils/session";
 import { getUserProfile } from "../utils/users";
 
@@ -17,6 +18,12 @@ jest.mock("../screens/LoginScreen", () => {
   const { Text } = require("react-native");
   const Screen = () => <Text>LOGIN_SCREEN</Text>;
   Screen.displayName = "MockLoginScreen";
+  return Screen;
+});
+jest.mock("../screens/OnboardingScreen", () => {
+  const { Text } = require("react-native");
+  const Screen = () => <Text>ONBOARDING_SCREEN</Text>;
+  Screen.displayName = "MockOnboardingScreen";
   return Screen;
 });
 jest.mock("../screens/WelcomeScreen", () => {
@@ -51,12 +58,17 @@ jest.mock("../utils/users", () => ({
   getUserProfile: jest.fn(),
 }));
 
+jest.mock("../utils/onboarding", () => ({
+  hasSeenOnboarding: jest.fn(),
+}));
+
 describe("App", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     checkHealth.mockResolvedValue(true);
     getSession.mockResolvedValue(null);
     getUserProfile.mockResolvedValue({ success: true, profile: { firstname: "Alice" } });
+    hasSeenOnboarding.mockResolvedValue(true);
   });
 
   it("shows an error message when the API is unavailable", async () => {
@@ -71,6 +83,14 @@ describe("App", () => {
     const { findByText } = render(<App />);
 
     expect(await findByText("WELCOME_SCREEN")).toBeTruthy();
+  });
+
+  it("introduces the app on the very first launch", async () => {
+    hasSeenOnboarding.mockResolvedValue(false);
+
+    const { findByText } = render(<App />);
+
+    expect(await findByText("ONBOARDING_SCREEN")).toBeTruthy();
   });
 
   it("starts on Home when a session is stored and the token is still valid", async () => {

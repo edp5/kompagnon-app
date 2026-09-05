@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "kompagnon-app",
+    "name": "Kompagnon",
     "slug": "kompagnon-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,22 +13,42 @@
       "backgroundColor": "#F3EDE6"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.kompagnon.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Kompagnon utilise votre position pour renseigner votre point de départ lorsque vous demandez un accompagnement.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F3EDE6"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "dev.kompagnon.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Kompagnon utilise votre position pour renseigner votre point de départ lorsque vous demandez un accompagnement."
+        }
+      ]
     ],
-    "scheme": "kompagnon"
+    "scheme": "kompagnon",
+    "primaryColor": "#48AFC4",
+    "description": "L'accompagnement accessible, pensé pour tous : trouvez un binôme pour vos trajets."
   }
 }

@@ -217,7 +217,7 @@ async function updateFoundJourneyStatus({ token, foundJourneyId, accept }) {
  * @param {{ token: string, now?: Date }} params
  * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
  */
-async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
+async function getMatchedJourneys({ token, now = new Date(), past = false }) {
   const result = await getJourneys({ token });
   if (!result.success) {
     return result;
@@ -225,7 +225,10 @@ async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
 
   const upcoming = result.journeys.filter((journey) => {
     const arrival = new Date(journey.arrivalTime);
-    return !isNaN(arrival.getTime()) && arrival >= now && journey.isMatched;
+    if (isNaN(arrival.getTime()) || !journey.isMatched) {
+      return false;
+    }
+    return past ? arrival < now : arrival >= now;
   });
 
   const withMatches = await Promise.all(
@@ -245,15 +248,37 @@ async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
 
   const journeys = withMatches
     .filter(Boolean)
-    .sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
+    // Upcoming trips read soonest first; past ones read most recent first.
+    .sort((a, b) => (past
+      ? new Date(b.departureTime) - new Date(a.departureTime)
+      : new Date(a.departureTime) - new Date(b.departureTime)));
 
   return { success: true, journeys };
+}
+
+/**
+ * Upcoming journeys that still have a live match, soonest first.
+ * @param {{ token: string, now?: Date }} params
+ * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
+ */
+async function getUpcomingMatchedJourneys({ token, now = new Date() }) {
+  return getMatchedJourneys({ token, now, past: false });
+}
+
+/**
+ * Journeys already travelled, most recent first, so the user keeps a history.
+ * @param {{ token: string, now?: Date }} params
+ * @returns {Promise<{ success: boolean, journeys?: object[], message?: string }>}
+ */
+async function getPastMatchedJourneys({ token, now = new Date() }) {
+  return getMatchedJourneys({ token, now, past: true });
 }
 
 export {
   getJourney,
   getJourneyMatches,
   getJourneys,
+  getPastMatchedJourneys,
   getUpcomingMatchedJourneys,
   isConfirmedMatch,
   matchState,

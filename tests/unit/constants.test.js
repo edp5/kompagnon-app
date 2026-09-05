@@ -1,4 +1,4 @@
-import { USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../../constants";
+import { normalizeRole, USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../../constants";
 
 // Values stored by the API, from api/src/shared/constants.js in edp5/kompagnon.
 // GET /api/users/profile returns them as-is, so a label map keyed on anything
@@ -30,5 +30,15 @@ describe("Unit | Constants", () => {
     expect(Object.keys(USER_ROLES).sort()).toEqual([...API_ROLES].sort());
     expect(Object.keys(USER_GENRE).sort()).toEqual([...API_GENRES].sort());
     expect(Object.keys(USER_DISABILITIES).sort()).toEqual([...API_DISABILITIES].sort());
+  });
+
+  it("normalises the roles of accounts created before the API renamed them", () => {
+    expect(normalizeRole("valid")).toBe("companion");
+    expect(normalizeRole("invalid")).toBe("passenger");
+  });
+
+  it("leaves a current role untouched", () => {
+    API_ROLES.forEach((role) => expect(normalizeRole(role)).toBe(role));
+    expect(normalizeRole(undefined)).toBeUndefined();
   });
 });

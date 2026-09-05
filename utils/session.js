@@ -1,36 +1,8 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { getItem, removeItem, setItem } from "./storage";
 
 // Same key names as the web auth store.
 const TOKEN_KEY = "auth_token";
 const USER_ID_KEY = "auth_user_id";
-
-// expo-secure-store has no web implementation, so on web we fall back to
-// localStorage. On native we use the device's secure storage.
-const isWeb = Platform.OS === "web";
-
-async function setItem(key, value) {
-  if (isWeb) {
-    globalThis.localStorage?.setItem(key, value);
-    return;
-  }
-  await SecureStore.setItemAsync(key, value);
-}
-
-async function getItem(key) {
-  if (isWeb) {
-    return globalThis.localStorage?.getItem(key) ?? null;
-  }
-  return SecureStore.getItemAsync(key);
-}
-
-async function removeItem(key) {
-  if (isWeb) {
-    globalThis.localStorage?.removeItem(key);
-    return;
-  }
-  await SecureStore.deleteItemAsync(key);
-}
 
 /**
  * Persists the authenticated session (bearer token + user id).

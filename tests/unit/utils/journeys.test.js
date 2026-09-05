@@ -3,6 +3,7 @@ import {
   getJourney,
   getJourneyMatches,
   getJourneys,
+  getPastMatchedJourneys,
   getUpcomingMatchedJourneys,
   isConfirmedMatch,
   matchState,
@@ -284,5 +285,49 @@ describe("Unit | Utils | getUpcomingMatchedJourneys", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toBe("Session expirée. Reconnectez-vous.");
+  });
+});
+
+describe("Unit | Utils | getPastMatchedJourneys", () => {
+  const NOW = new Date("2026-08-13T12:00:00.000Z");
+
+  const at = (id, hours) => ({
+    id,
+    isMatched: true,
+    departureTime: new Date(NOW.getTime() + hours * 3600000).toISOString(),
+    arrivalTime: new Date(NOW.getTime() + (hours + 1) * 3600000).toISOString(),
+  });
+
+  const accepted = { foundJourneyId: 10, myStatus: "accepted", otherStatus: "accepted", user: { firstname: "Bob" } };
+
+  function mockApi({ journeys, matchesByJourneyId }) {
+    apiFetch.mockImplementation(async (endpoint) => {
+      const matches = endpoint.match(/^\/api\/journeys\/(\d+)\/matches$/);
+      if (matches) {
+        return { ok: true, json: async () => ({ data: matchesByJourneyId[matches[1]] ?? [] }) };
+      }
+      return { ok: true, json: async () => ({ data: journeys }) };
+    });
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("keeps only journeys already travelled, most recent first", async () => {
+    mockApi({
+      journeys: [at(1, -30), at(2, -5), at(3, 6)],
+      matchesByJourneyId: { 1: [accepted], 2: [accepted], 3: [accepted] },
+    });
+
+    const result = await getPastMatchedJourneys({ token: "jwt", now: NOW });
+
+    expect(result.journeys.map((journey) => journey.id)).toEqual([2, 1]);
+  });
+
+  it("is empty when nothing has been travelled yet", async () => {
+    mockApi({ journeys: [at(1, 5)], matchesByJourneyId: { 1: [accepted] } });
+
+    expect((await getPastMatchedJourneys({ token: "jwt", now: NOW })).journeys).toEqual([]);
   });
 });
