@@ -63,9 +63,23 @@ describe("Help, privacy, terms and about — Integration Tests", () => {
                 expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Onboarding" }] });
             });
         });
+
+        it("goes back", () => {
+            const { getByLabelText } = render(<HelpScreen />);
+            fireEvent.press(getByLabelText("Retour"));
+
+            expect(mockGoBack).toHaveBeenCalled();
+        });
     });
 
     describe("Privacy", () => {
+        it("goes back", () => {
+            const { getByLabelText } = render(<PrivacyScreen />);
+            fireEvent.press(getByLabelText("Retour"));
+
+            expect(mockGoBack).toHaveBeenCalled();
+        });
+
         it("leads with the commitments", () => {
             const { getByTestId, getByText } = render(<PrivacyScreen />);
 

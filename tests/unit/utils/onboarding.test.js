@@ -1,8 +1,9 @@
-import { hasSeenOnboarding, markOnboardingSeen } from "../../../utils/onboarding";
-import { getItem, setItem } from "../../../utils/storage";
+import { hasSeenOnboarding, markOnboardingSeen, resetOnboarding } from "../../../utils/onboarding";
+import { getItem, removeItem, setItem } from "../../../utils/storage";
 
 jest.mock("../../../utils/storage", () => ({
   getItem: jest.fn(),
+  removeItem: jest.fn(),
   setItem: jest.fn(),
 }));
 
@@ -29,11 +30,19 @@ describe("Unit | Utils | onboarding", () => {
     expect(setItem).toHaveBeenCalledWith("onboarding_seen", "true");
   });
 
+  it("forgets it so the introduction can be watched again", async () => {
+    await resetOnboarding();
+
+    expect(removeItem).toHaveBeenCalledWith("onboarding_seen");
+  });
+
   it("does not block the app when storage fails", async () => {
     getItem.mockRejectedValue(new Error("storage"));
     setItem.mockRejectedValue(new Error("storage"));
+    removeItem.mockRejectedValue(new Error("storage"));
 
     expect(await hasSeenOnboarding()).toBe(true);
     await expect(markOnboardingSeen()).resolves.toBeUndefined();
+    await expect(resetOnboarding()).resolves.toBeUndefined();
   });
 });
