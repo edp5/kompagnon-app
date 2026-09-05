@@ -25,6 +25,12 @@ jest.mock("../../utils/users", () => ({
     getUserProfile: jest.fn(),
 }));
 
+// The review card lives on a journey already travelled; keep it inert elsewhere.
+jest.mock("../../utils/reviews", () => ({
+    getMyJourneyReview: jest.fn().mockResolvedValue({ success: true, review: null }),
+    reviewJourney: jest.fn().mockResolvedValue({ success: true }),
+}));
+
 // The follow card lives on a confirmed match; keep it inert in these tests.
 jest.mock("../../utils/following", () => ({
     getPositions: jest.fn().mockResolvedValue({ success: true, positions: [] }),
@@ -39,12 +45,18 @@ jest.mock("@react-navigation/native", () => ({
     useRoute: () => ({ params: { journeyId: 8 } }),
 }));
 
+// Ahead of now, so the journey reads as still to come; the tests that need a
+// travelled journey override the arrival time.
+const IN_AN_HOUR = new Date(Date.now() + 3600 * 1000).toISOString();
+const IN_TWO_HOURS = new Date(Date.now() + 7200 * 1000).toISOString();
+const AN_HOUR_AGO = new Date(Date.now() - 3600 * 1000).toISOString();
+
 const JOURNEY = {
     id: 8,
     departureAddress: "12 Rue de Rivoli, Paris",
     arrivalAddress: "Gare de Lyon, Paris",
-    departureTime: "2026-08-14T15:00:00.000Z",
-    arrivalTime: "2026-08-14T16:00:00.000Z",
+    departureTime: IN_AN_HOUR,
+    arrivalTime: IN_TWO_HOURS,
 };
 
 const otherJourney = {
@@ -136,6 +148,59 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         const { findByText } = render(<JourneyDetailScreen />);
 
         expect(await findByText("Ajouter un contact de confiance")).toBeTruthy();
+    });
+
+    it("asks how the journey went once it is over, and puts the live cards away", async () => {
+        getJourney.mockResolvedValue({
+            success: true,
+            journey: { ...JOURNEY, departureTime: AN_HOUR_AGO, arrivalTime: AN_HOUR_AGO },
+        });
+
+        const { findByTestId, queryByTestId } = render(<JourneyDetailScreen />);
+
+        expect(await findByTestId("journey-review")).toBeTruthy();
+        expect(queryByTestId("meeting-code")).toBeNull();
+        expect(queryByTestId("emergency-alert")).toBeNull();
+        expect(queryByTestId("journey-follow-card")).toBeNull();
+    });
+
+    it("does not ask for a review while the journey is still ahead", async () => {
+        const { findByTestId, queryByTestId } = render(<JourneyDetailScreen />);
+        await findByTestId("meeting-code");
+
+        expect(queryByTestId("journey-review")).toBeNull();
+    });
+
+    it("shows how the other user has been rated, before accepting", async () => {
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{
+                ...PENDING_MATCH,
+                user: { ...PENDING_MATCH.user, reputation: { average: 4.5, count: 12 } },
+            }],
+        });
+
+        const { findByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("4,5 · 12 trajets")).toBeTruthy();
+    });
+
+    it("says plainly when a user has no rating yet", async () => {
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{ ...PENDING_MATCH, user: { ...PENDING_MATCH.user, reputation: { average: null, count: 0 } } }],
+        });
+
+        const { findByText } = render(<JourneyDetailScreen />);
+
+        expect(await findByText("Pas encore de trajet noté")).toBeTruthy();
+    });
+
+    it("takes the user to their profile to add a trusted contact", async () => {
+        const { findByText } = render(<JourneyDetailScreen />);
+        fireEvent.press(await findByText("Ajouter un contact de confiance"));
+
+        expect(mockNavigate).toHaveBeenCalledWith("Profile");
     });
 
     it("shows the meeting code of a confirmed match", async () => {

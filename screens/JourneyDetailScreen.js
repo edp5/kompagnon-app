@@ -18,7 +18,9 @@ import EmergencyAlert from "../components/EmergencyAlert";
 import Icon from "../components/Icon";
 import JourneyFollowCard from "../components/JourneyFollowCard";
 import JourneyMap from "../components/JourneyMap";
+import JourneyReviewCard from "../components/JourneyReviewCard";
 import MeetingCode from "../components/MeetingCode";
+import StarRating from "../components/StarRating";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
@@ -110,6 +112,9 @@ export default function JourneyDetailScreen() {
   }, [load]);
 
   const confirmedMatch = matches.find((item) => matchState(item).confirmed) ?? null;
+  // Once the trip is behind them, following it live and warning someone about it
+  // are noise; what is left to do is say how it went.
+  const journeyIsOver = journey?.arrivalTime ? new Date(journey.arrivalTime) < new Date() : false;
   const otherTrip = matches.map((item) => item.journey).find((trip) => trip && trip.departureLat != null);
   const mapMine = journey && journey.departureLat != null
     ? {
@@ -209,14 +214,21 @@ export default function JourneyDetailScreen() {
               </>
             )}
 
-            {confirmedMatch && (
+            {confirmedMatch && journeyIsOver && (
+              <JourneyReviewCard
+                foundJourneyId={confirmedMatch.foundJourneyId}
+                otherName={confirmedMatch.user?.firstname}
+              />
+            )}
+
+            {confirmedMatch && !journeyIsOver && (
               <MeetingCode
                 code={confirmedMatch.meetingCode}
                 otherName={confirmedMatch.user?.firstname}
               />
             )}
 
-            {confirmedMatch && (
+            {confirmedMatch && !journeyIsOver && (
               <EmergencyAlert
                 foundJourneyId={confirmedMatch.foundJourneyId}
                 contact={trustedContact}
@@ -224,7 +236,7 @@ export default function JourneyDetailScreen() {
               />
             )}
 
-            {confirmedMatch && (
+            {confirmedMatch && !journeyIsOver && (
               <JourneyFollowCard
                 foundJourneyId={confirmedMatch.foundJourneyId}
                 otherName={confirmedMatch.user?.firstname}
@@ -288,6 +300,21 @@ function MatchCard({ match, responding, onRespond, onCall, onChat }) {
           <Text style={styles.personName}>
             {firstname} {match.user?.lastname}
           </Text>
+          {match.user?.reputation?.count > 0 ? (
+            <View style={styles.reputationRow}>
+              <StarRating
+                value={Math.round(match.user.reputation.average)}
+                label={`Note de ${firstname ?? "cette personne"}`}
+                testID={`match-reputation-${match.foundJourneyId}`}
+              />
+              <Text style={styles.reputationText}>
+                {String(match.user.reputation.average).replace(".", ",")} ·{" "}
+                {match.user.reputation.count} trajet{match.user.reputation.count > 1 ? "s" : ""}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.reputationText}>Pas encore de trajet noté</Text>
+          )}
           {state.confirmed ? (
             <View style={styles.confirmedBadge}>
               <Icon name="check" size={11} color={colors.successText} />
@@ -517,6 +544,8 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 6,
   },
+  reputationRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  reputationText: { fontSize: 12, fontFamily: fonts.body, color: colors.textMedium, marginTop: 2 },
   personName: {
     fontSize: 17,
     fontFamily: fonts.displayBold,
