@@ -1,15 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef, useState } from "react";
-import {
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import Icon from "../components/Icon";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
@@ -42,10 +34,9 @@ const SLIDES = [
  */
 export default function OnboardingScreen() {
   const navigation = useNavigation();
-  const scrollRef = useRef(null);
   const [index, setIndex] = useState(0);
-  const width = Dimensions.get("window").width;
 
+  const current = SLIDES[index];
   const isLast = index === SLIDES.length - 1;
 
   async function finish() {
@@ -58,14 +49,7 @@ export default function OnboardingScreen() {
       finish();
       return;
     }
-    const target = index + 1;
-    setIndex(target);
-    scrollRef.current?.scrollTo({ x: target * width, animated: true });
-  }
-
-  function onScrollEnd(event) {
-    const page = Math.round(event.nativeEvent.contentOffset.x / width);
-    setIndex(page);
+    setIndex(index + 1);
   }
 
   return (
@@ -84,29 +68,19 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
-        testID="onboarding-slides"
-      >
-        {SLIDES.map((slide) => (
-          <View
-            key={slide.key}
-            style={[styles.slide, { width }]}
-            accessible
-            accessibilityLabel={`${slide.title}. ${slide.text}`}
-          >
-            <View style={styles.iconCircle}>
-              <Icon name={slide.icon} size={40} color={colors.tealDark} />
-            </View>
-            <Text style={styles.title}>{slide.title}</Text>
-            <Text style={styles.text}>{slide.text}</Text>
+      <View style={styles.slides} testID="onboarding-slides">
+        <View
+          style={styles.slide}
+          accessible
+          accessibilityLabel={`Étape ${index + 1} sur ${SLIDES.length}. ${current.title}. ${current.text}`}
+        >
+          <View style={styles.iconCircle}>
+            <Icon name={current.icon} size={40} color={colors.tealDark} />
           </View>
-        ))}
-      </ScrollView>
+          <Text style={styles.title}>{current.title}</Text>
+          <Text style={styles.text}>{current.text}</Text>
+        </View>
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.dots} accessibilityLabel={`Étape ${index + 1} sur ${SLIDES.length}`}>
@@ -131,6 +105,7 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
+  slides: { flex: 1, justifyContent: "center" },
   topBar: { alignItems: "flex-end", paddingHorizontal: 16, paddingTop: 8 },
   skip: { paddingVertical: 12, paddingHorizontal: 12, minHeight: 44, justifyContent: "center" },
   skipText: { fontSize: 15, fontFamily: fonts.bodyBold, color: colors.textMedium },
