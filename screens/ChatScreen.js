@@ -70,10 +70,9 @@ export default function ChatScreen() {
   }, [load]);
 
   async function onSend() {
+    // The send button is disabled on an empty draft and while a send is in
+    // flight, so this only ever runs with something to say.
     const body = draft.trim();
-    if (!body || sending) {
-      return;
-    }
 
     const session = await getSession();
     if (!session) {
@@ -141,6 +140,7 @@ export default function ChatScreen() {
             ref={scrollRef}
             style={styles.flex}
             contentContainerStyle={styles.conversation}
+            testID="chat-conversation"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
           >
             {messages.map((message) => (

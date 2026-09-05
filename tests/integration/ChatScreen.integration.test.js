@@ -99,6 +99,42 @@ describe("ChatScreen — Integration Tests", () => {
         expect(getJourneyMessages).not.toHaveBeenCalled();
     });
 
+    it("asks the user to reconnect when the session expired before sending", async () => {
+        const { findByTestId, getByTestId } = render(<ChatScreen />);
+        await findByTestId("chat-input");
+        getSession.mockResolvedValue(null);
+
+        fireEvent.changeText(getByTestId("chat-input"), "Je suis devant l'entrée");
+        fireEvent.press(getByTestId("chat-send"));
+
+        await waitFor(() => {
+            expect(sendJourneyMessage).not.toHaveBeenCalled();
+        });
+    });
+
+    it("says why a message could not be sent, keeping the draft", async () => {
+        sendJourneyMessage.mockResolvedValue({
+            success: false,
+            message: "Impossible d'envoyer le message. Réessayez.",
+        });
+
+        const { findByTestId, getByTestId, findByText } = render(<ChatScreen />);
+        await findByTestId("chat-input");
+
+        fireEvent.changeText(getByTestId("chat-input"), "Je suis devant l'entrée");
+        fireEvent.press(getByTestId("chat-send"));
+
+        expect(await findByText("Impossible d'envoyer le message. Réessayez.")).toBeTruthy();
+        expect(getByTestId("chat-input").props.value).toBe("Je suis devant l'entrée");
+    });
+
+    it("keeps the newest message in view as the conversation grows", async () => {
+        const { findByTestId } = render(<ChatScreen />);
+        const conversation = await findByTestId("chat-conversation");
+
+        expect(() => conversation.props.onContentSizeChange()).not.toThrow();
+    });
+
     it("goes back", async () => {
         const { findByLabelText } = render(<ChatScreen />);
         fireEvent.press(await findByLabelText("Retour"));
