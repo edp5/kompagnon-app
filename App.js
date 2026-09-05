@@ -67,6 +67,9 @@ export default function App() {
   // Load the Kompagnon brand fonts (Nunito display + DM Sans body).
   // Rendering is not gated on this: fonts fall back to system until ready.
   useFonts({
+    // Brand typeface (More Sugar), used for titles.
+    "MoreSugar-Regular": require("./assets/fonts/MoreSugar-Regular.ttf"),
+    "MoreSugar-Thin": require("./assets/fonts/MoreSugar-Thin.ttf"),
     Nunito_700Bold,
     Nunito_800ExtraBold,
     Nunito_900Black,

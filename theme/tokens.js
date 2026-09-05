@@ -63,11 +63,16 @@ export const spacing = {
   xxl: 32,
 };
 
-// -- Font families (loaded via @expo-google-fonts) --
+// -- Font families --
+// Titles use More Sugar, the brand typeface (bundled in assets/fonts). It ships
+// only in Regular and Thin, so the display scale relies on size rather than
+// weight. Body copy stays on DM Sans, which is easier to read at small sizes.
 export const fonts = {
-  display: "Nunito_800ExtraBold", // titles
-  displayBold: "Nunito_700Bold",
-  displayBlack: "Nunito_900Black",
+  brand: "MoreSugar-Regular",
+  brandThin: "MoreSugar-Thin",
+  display: "MoreSugar-Regular", // titles
+  displayBold: "MoreSugar-Regular",
+  displayBlack: "MoreSugar-Regular",
   body: "DMSans_400Regular",
   bodyMedium: "DMSans_500Medium",
   bodySemiBold: "DMSans_600SemiBold",

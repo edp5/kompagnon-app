@@ -1,37 +1,141 @@
+import { useNavigation } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
 import React from "react";
+import { Image, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import appJson from "../app.json";
-import ContentScreen from "../components/ContentScreen";
+import logo from "../assets/kompagnon-logo.png";
+import Icon from "../components/Icon";
+import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { resetOnboarding } from "../utils/onboarding";
 
 const VERSION = appJson?.expo?.version ?? "1.0.0";
+const SUPPORT_EMAIL = "contact@kompagnon.dev";
 
-const SECTIONS = [
-  {
-    heading: "Notre mission",
-    body: "Kompagnon met en relation des personnes en situation de handicap avec des accompagnateurs bénévoles, pour que se déplacer ne soit plus un obstacle.",
-  },
-  {
-    heading: "Comment ça marche",
-    body: "Vous enregistrez un trajet, l'application cherche une personne dont le trajet correspond, et vous confirmez ensemble. Le jour J, vous vous retrouvez au point de rendez-vous affiché sur la carte.",
-  },
-  {
-    heading: "Accessibilité",
-    body: "L'application est pensée pour être utilisable au lecteur d'écran : les blocs sont annoncés d'un seul tenant, les icônes décoratives sont ignorées, et chaque action est explicitement décrite.",
-  },
-  {
-    heading: "Version",
-    body: `Kompagnon mobile ${VERSION}`,
-  },
+const STEPS = [
+  { title: "Enregistrez un trajet", text: "Départ, arrivée, horaires : en moins d'une minute." },
+  { title: "Recevez une correspondance", text: "Une personne dont l'itinéraire croise le vôtre vous est proposée." },
+  { title: "Confirmez et retrouvez-vous", text: "La carte affiche le point de rendez-vous, et vous pouvez l'appeler." },
 ];
 
-/** About page, reachable from the profile tab. */
+/** About page: who we are, how it works, and what to do next. */
 export default function AboutScreen() {
+  const navigation = useNavigation();
+
+  async function replayIntroduction() {
+    await resetOnboarding();
+    navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
+  }
+
+  const LINKS = [
+    { icon: "shield", label: "Confidentialité", onPress: () => navigation.navigate("Privacy") },
+    { icon: "file-text", label: "Conditions d'utilisation", onPress: () => navigation.navigate("Terms") },
+    { icon: "mail", label: "Nous écrire", onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`) },
+    { icon: "play-circle", label: "Revoir l'introduction", onPress: replayIntroduction },
+  ];
+
   return (
-    <ContentScreen
-      title="À propos"
-      intro="Kompagnon, l'accompagnement accessible, pensé pour tous."
-      sections={SECTIONS}
-      testID="about-screen"
-    />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" />
+      <ScrollView contentContainerStyle={styles.scrollContent} testID="about-screen">
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Retour"
+        >
+          <Icon name="arrow-left" size={22} color={colors.navy} />
+        </TouchableOpacity>
+
+        <View style={styles.hero} accessible accessibilityLabel={`Kompagnon, version ${VERSION}. L'accompagnement accessible, pensé pour tous.`}>
+          <Image source={logo} style={styles.logo} resizeMode="cover" accessibilityRole="image" accessibilityLabel="Logo Kompagnon" />
+          <Text style={styles.brand}>Kompagnon</Text>
+          <View style={styles.versionPill}>
+            <Text style={styles.versionText}>Version {VERSION}</Text>
+          </View>
+          <Text style={styles.tagline}>L&apos;accompagnement accessible, pensé pour tous.</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Comment ça marche</Text>
+        {STEPS.map((step, position) => (
+          <View
+            key={step.title}
+            style={styles.step}
+            accessible
+            accessibilityLabel={`Étape ${position + 1}. ${step.title}. ${step.text}`}
+          >
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>{position + 1}</Text>
+            </View>
+            <View style={styles.stepBody}>
+              <Text style={styles.stepTitle}>{step.title}</Text>
+              <Text style={styles.stepText}>{step.text}</Text>
+            </View>
+          </View>
+        ))}
+
+        <Text style={styles.sectionTitle}>Aller plus loin</Text>
+        <View style={styles.linkCard}>
+          {LINKS.map((link, position) => (
+            <TouchableOpacity
+              key={link.label}
+              style={[styles.linkRow, position < LINKS.length - 1 && styles.linkRowBordered]}
+              onPress={link.onPress}
+              accessibilityRole="button"
+              accessibilityLabel={link.label}
+              testID={`about-link-${position}`}
+            >
+              <Icon name={link.icon} size={18} color={colors.tealDark} />
+              <Text style={styles.linkLabel}>{link.label}</Text>
+              <Icon name="chevron-right" size={18} color={colors.textLight} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.credit}>Fait avec soin pour que se déplacer ne soit plus un obstacle.</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.bg },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  backButton: {
+    width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
+    alignItems: "center", justifyContent: "center", marginBottom: 16, ...shadow.card,
+  },
+  hero: { alignItems: "center", marginBottom: 12 },
+  logo: { width: 84, height: 84, borderRadius: radius.xl, marginBottom: 14, ...shadow.card },
+  brand: { fontSize: 30, fontFamily: fonts.displayBlack, color: colors.navy, letterSpacing: -0.5 },
+  versionPill: {
+    marginTop: 8, paddingVertical: 5, paddingHorizontal: 12,
+    borderRadius: radius.full, backgroundColor: colors.tealLight,
+  },
+  versionText: { fontSize: 12, fontFamily: fonts.bodyBold, color: colors.tealDark },
+  tagline: {
+    marginTop: 12, fontSize: 15, fontFamily: fonts.body, color: colors.textMedium,
+    textAlign: "center", lineHeight: 21,
+  },
+  sectionTitle: { fontSize: 16, fontFamily: fonts.displayBold, color: colors.navy, marginTop: 24, marginBottom: 12, marginLeft: 4 },
+  step: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, marginBottom: 10, ...shadow.card,
+  },
+  stepNumber: {
+    width: 32, height: 32, borderRadius: radius.full, backgroundColor: colors.teal,
+    alignItems: "center", justifyContent: "center",
+  },
+  stepNumberText: { fontSize: 15, fontFamily: fonts.displayBold, color: colors.textOnDark },
+  stepBody: { flex: 1 },
+  stepTitle: { fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.navy, marginBottom: 2 },
+  stepText: { fontSize: 13, fontFamily: fonts.body, color: colors.textMedium, lineHeight: 18 },
+  linkCard: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: "hidden", ...shadow.card },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, paddingHorizontal: 18, minHeight: 56 },
+  linkRowBordered: { borderBottomWidth: 1, borderBottomColor: colors.beige },
+  linkLabel: { flex: 1, fontSize: 15, fontFamily: fonts.bodySemiBold, color: colors.navy },
+  credit: {
+    marginTop: 24, fontSize: 13, fontFamily: fonts.body, color: colors.textLight,
+    textAlign: "center", lineHeight: 19,
+  },
+});

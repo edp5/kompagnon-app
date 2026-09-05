@@ -1,4 +1,4 @@
-import { getItem, setItem } from "./storage";
+import { getItem, removeItem, setItem } from "./storage";
 
 const ONBOARDING_KEY = "onboarding_seen";
 
@@ -24,4 +24,13 @@ async function markOnboardingSeen() {
   }
 }
 
-export { hasSeenOnboarding, markOnboardingSeen };
+/** Forgets the introduction so it can be watched again. @returns {Promise<void>} */
+async function resetOnboarding() {
+  try {
+    await removeItem(ONBOARDING_KEY);
+  } catch {
+    // Nothing to do: the introduction simply stays marked as seen.
+  }
+}
+
+export { hasSeenOnboarding, markOnboardingSeen, resetOnboarding };
