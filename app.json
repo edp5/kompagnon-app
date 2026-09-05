@@ -28,6 +28,7 @@
     "plugins": [
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "scheme": "kompagnon"
   }
 }

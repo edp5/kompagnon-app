@@ -18,10 +18,16 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import ApiUnavailable from "./components/ApiUnavailable";
 import MainTabs from "./components/MainTabs";
+import AboutScreen from "./screens/AboutScreen";
+import ActivateAccountScreen from "./screens/ActivateAccountScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import HelpScreen from "./screens/HelpScreen";
 import JourneyDetailScreen from "./screens/JourneyDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
+import PrivacyScreen from "./screens/PrivacyScreen";
 import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import { colors } from "./theme/tokens";
 import { checkHealth } from "./utils/api-fetch";
@@ -29,6 +35,17 @@ import { clearSession, getSession } from "./utils/session";
 import { getUserProfile } from "./utils/users";
 
 const Stack = createNativeStackNavigator();
+
+// Deep links used by the account emails, e.g. kompagnon://reset-password?token=…
+const linking = {
+  prefixes: ["kompagnon://", "https://kompagnon.dev"],
+  config: {
+    screens: {
+      ResetPassword: "reset-password",
+      ActivateAccount: "activate",
+    },
+  },
+};
 
 const navTheme = {
   ...DefaultTheme,
@@ -105,7 +122,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer theme={navTheme} linking={linking}>
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
@@ -116,6 +133,12 @@ export default function App() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="RecordJourney" component={RecordJourneyScreen} />
           <Stack.Screen name="JourneyDetail" component={JourneyDetailScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          <Stack.Screen name="ActivateAccount" component={ActivateAccountScreen} />
+          <Stack.Screen name="Help" component={HelpScreen} />
+          <Stack.Screen name="Privacy" component={PrivacyScreen} />
+          <Stack.Screen name="About" component={AboutScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
