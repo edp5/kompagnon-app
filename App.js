@@ -20,6 +20,7 @@ import ApiUnavailable from "./components/ApiUnavailable";
 import MainTabs from "./components/MainTabs";
 import AboutScreen from "./screens/AboutScreen";
 import ActivateAccountScreen from "./screens/ActivateAccountScreen";
+import ChatScreen from "./screens/ChatScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import HelpScreen from "./screens/HelpScreen";
 import JourneyDetailScreen from "./screens/JourneyDetailScreen";
@@ -143,6 +144,7 @@ export default function App() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="RecordJourney" component={RecordJourneyScreen} />
           <Stack.Screen name="JourneyDetail" component={JourneyDetailScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="ActivateAccount" component={ActivateAccountScreen} />
