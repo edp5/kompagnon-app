@@ -5,9 +5,14 @@ import { colors } from "../theme/tokens";
  */
 
 /**
- * Builds a self-contained Leaflet page (loaded inside a WebView) showing an
- * accompanied journey with the project palette: the user's own trip, the
- * companion's trip when its coordinates are known, and the meeting point.
+ * Builds a self-contained MapLibre GL page (loaded inside a WebView) showing an
+ * accompanied journey: the user's own trip, the companion's trip when its
+ * coordinates are known, and the meeting point.
+ *
+ * MapLibre renders vector tiles, so the map stays sharp at every zoom and the
+ * base map can be a muted style that lets the brand-coloured overlays read.
+ * The style comes from OpenFreeMap, which needs no account or API key.
+ *
  * @param {{ mine: {departure: Point, arrival: Point}, other?: {departure: Point, arrival: Point}, meeting?: Point }} data
  * @returns {string} HTML document.
  */
@@ -20,7 +25,6 @@ function buildHtml({ mine, other, meeting }) {
       teal: colors.teal,
       tealDark: colors.tealDark,
       navy: colors.navy,
-      warning: colors.warning,
       surface: colors.surface,
       bg: colors.bg,
     },
@@ -31,66 +35,105 @@ function buildHtml({ mine, other, meeting }) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <style>
   html, body, #map { height: 100%; margin: 0; background: ${colors.bg}; }
-  /* Mute the raster tiles so they sit under the brand-coloured overlays. */
-  .leaflet-tile-pane { filter: saturate(0.72) brightness(1.03) contrast(0.96); }
-  .leaflet-container { background: ${colors.bg}; font-family: -apple-system, system-ui, sans-serif; }
+  .maplibregl-ctrl-attrib { display: none; }
+  .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 3px solid ${colors.surface};
+    box-shadow: 0 1px 4px rgba(30,44,56,0.35);
+  }
   .rv-pin {
     display: flex; align-items: center; justify-content: center;
-    width: 26px; height: 26px; border-radius: 50%;
+    width: 28px; height: 28px; border-radius: 50%;
     background: ${colors.teal}; border: 3px solid ${colors.surface};
-    box-shadow: 0 2px 6px rgba(30,44,56,0.35); color: #fff;
-    font-size: 12px; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(30,44,56,0.4);
+    color: #fff; font: 700 12px/1 -apple-system, system-ui, sans-serif;
   }
-  .dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid ${colors.surface}; box-shadow: 0 1px 4px rgba(30,44,56,0.3); }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <script>
   var C = ${config};
-  var start = C.mine && C.mine.departure ? [Number(C.mine.departure.lat), Number(C.mine.departure.lon)] : [48.8566, 2.3522];
-  var map = L.map('map', { zoomControl: true, attributionControl: false }).setView(start, 13);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  function lngLat(p) { return [Number(p.lon), Number(p.lat)]; }
 
-  function latlng(p){ return [Number(p.lat), Number(p.lon)]; }
-  function dot(color){ return L.divIcon({ className: '', html: '<div class="dot" style="background:'+color+'"></div>', iconSize:[16,16], iconAnchor:[8,8] }); }
+  var start = C.mine && C.mine.departure ? lngLat(C.mine.departure) : [2.3522, 48.8566];
 
-  var pts = [];
+  var map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/positron',
+    center: start,
+    zoom: 12,
+    attributionControl: false,
+    // The map sits inside a card; the surrounding screen handles scrolling.
+    cooperativeGestures: false,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
 
-  function drawTrip(trip, color, dashed){
-    if(!trip) return;
-    var a = latlng(trip.departure), b = latlng(trip.arrival);
-    pts.push(a, b);
-    L.polyline([a, b], { color: color, weight: dashed ? 3 : 5, opacity: dashed ? 0.7 : 0.95, dashArray: dashed ? '6,8' : null, lineCap: 'round' }).addTo(map);
-    L.marker(a, { icon: dot(color) }).addTo(map).bindTooltip(trip.departure.label || 'Départ', {direction:'top'});
-    L.marker(b, { icon: dot(C.palette.navy) }).addTo(map).bindTooltip(trip.arrival.label || 'Arrivée', {direction:'top'});
+  var points = [];
+
+  function marker(className, lngLatValue, title, text) {
+    var el = document.createElement('div');
+    el.className = className;
+    if (title) { el.title = title; }
+    if (text) { el.textContent = text; }
+    new maplibregl.Marker({ element: el }).setLngLat(lngLatValue).addTo(map);
   }
 
-  drawTrip(C.mine, C.palette.teal, false);
-  drawTrip(C.other, C.palette.tealDark, true);
-
-  if (C.meeting) {
-    var m = latlng(C.meeting); pts.push(m);
-    L.marker(m, { icon: L.divIcon({ className: '', html: '<div class="rv-pin">RV</div>', iconSize:[26,26], iconAnchor:[13,13] }), zIndexOffset: 1000 })
-      .addTo(map).bindTooltip('Point de rendez-vous', {direction:'top'});
+  function dot(color, lngLatValue, title) {
+    var el = document.createElement('div');
+    el.className = 'dot';
+    el.style.background = color;
+    if (title) { el.title = title; }
+    new maplibregl.Marker({ element: el }).setLngLat(lngLatValue).addTo(map);
   }
 
-  function fit(){
-    map.invalidateSize();
-    if (pts.length > 1) {
-      map.fitBounds(L.latLngBounds(pts), { padding: [28, 28] });
-    } else if (pts.length === 1) {
-      map.setView(pts[0], 14);
+  function drawTrip(id, trip, color, dashed) {
+    if (!trip) { return; }
+    var from = lngLat(trip.departure), to = lngLat(trip.arrival);
+    points.push(from, to);
+
+    map.addSource(id, {
+      type: 'geojson',
+      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [from, to] } },
+    });
+    map.addLayer({
+      id: id + '-line',
+      type: 'line',
+      source: id,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: Object.assign(
+        { 'line-color': color, 'line-width': dashed ? 3 : 5, 'line-opacity': dashed ? 0.75 : 0.95 },
+        dashed ? { 'line-dasharray': [1.5, 1.5] } : {},
+      ),
+    });
+
+    dot(color, from, trip.departure.label || 'Départ');
+    dot(C.palette.navy, to, trip.arrival.label || 'Arrivée');
+  }
+
+  map.on('load', function () {
+    drawTrip('mine', C.mine, C.palette.teal, false);
+    drawTrip('other', C.other, C.palette.tealDark, true);
+
+    if (C.meeting) {
+      var m = lngLat(C.meeting);
+      points.push(m);
+      marker('rv-pin', m, 'Point de rendez-vous', 'RV');
     }
-  }
-  // The iframe/container may not have its size yet when the script first runs.
-  setTimeout(fit, 60);
-  window.addEventListener('load', fit);
-  window.addEventListener('resize', fit);
+
+    if (points.length > 1) {
+      var bounds = points.reduce(function (acc, p) { return acc.extend(p); },
+        new maplibregl.LngLatBounds(points[0], points[0]));
+      // Markers stand above their anchor, so keep more room at the top.
+      map.fitBounds(bounds, { padding: { top: 58, bottom: 38, left: 38, right: 38 }, duration: 0 });
+    } else if (points.length === 1) {
+      map.easeTo({ center: points[0], zoom: 14, duration: 0 });
+    }
+  });
 </script>
 </body>
 </html>`;
