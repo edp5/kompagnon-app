@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 
+import EmergencyAlert from "../components/EmergencyAlert";
 import Icon from "../components/Icon";
 import JourneyFollowCard from "../components/JourneyFollowCard";
 import JourneyMap from "../components/JourneyMap";
@@ -22,6 +23,7 @@ import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
 import { getSession } from "../utils/session";
+import { getUserProfile } from "../utils/users";
 
 export default function JourneyDetailScreen() {
   const navigation = useNavigation();
@@ -34,6 +36,7 @@ export default function JourneyDetailScreen() {
   const [error, setError] = useState(null);
   const [respondingId, setRespondingId] = useState(null);
   const [livePositions, setLivePositions] = useState([]);
+  const [trustedContact, setTrustedContact] = useState(null);
 
   const handleCall = useCallback((phoneNumber) => {
     const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
@@ -53,10 +56,13 @@ export default function JourneyDetailScreen() {
       return;
     }
 
-    const [journeyResult, matchesResult] = await Promise.all([
+    const [journeyResult, matchesResult, profileResult] = await Promise.all([
       getJourney({ token: session.token, journeyId }),
       getJourneyMatches({ token: session.token, journeyId }),
+      getUserProfile({ token: session.token }),
     ]);
+
+    setTrustedContact(profileResult.success ? profileResult.profile?.trustedContact ?? null : null);
 
     if (!journeyResult.success) {
       setError(journeyResult.message);
@@ -207,6 +213,14 @@ export default function JourneyDetailScreen() {
               <MeetingCode
                 code={confirmedMatch.meetingCode}
                 otherName={confirmedMatch.user?.firstname}
+              />
+            )}
+
+            {confirmedMatch && (
+              <EmergencyAlert
+                foundJourneyId={confirmedMatch.foundJourneyId}
+                contact={trustedContact}
+                onNoContact={() => navigation.navigate("Profile")}
               />
             )}
 
