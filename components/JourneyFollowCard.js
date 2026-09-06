@@ -1,15 +1,29 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, Alert, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { createShareLink, getPositions, recordPosition } from "../utils/following";
 import { getCurrentPosition } from "../utils/location";
+import { approachAnnouncement, distanceInMetres } from "../utils/proximity";
 import { getSession } from "../utils/session";
 
 // Foreground only, and only while the card is on screen: the app never follows
 // anyone in the background.
 const REPORT_INTERVAL_MS = 15000;
 const READ_INTERVAL_MS = 15000;
+
+/**
+ * Reads a distance the way someone would say it: metres while they are close
+ * enough for that to mean something, kilometres once they are not.
+ * @param {number} metres - The distance between the two users.
+ * @returns {string} The distance, spelled for reading aloud.
+ */
+function formatDistance(metres) {
+  if (metres < 1000) {
+    return `${Math.round(metres / 10) * 10} mètres`;
+  }
+  return `${(metres / 1000).toFixed(1).replace(".", ",")} kilomètres`;
+}
 
 /**
  * Live following of a confirmed journey: the user chooses to share their own
@@ -27,6 +41,7 @@ export default function JourneyFollowCard({ foundJourneyId, otherName, onPositio
   const [creatingLink, setCreatingLink] = useState(false);
   const [error, setError] = useState(null);
   const reportTimer = useRef(null);
+  const announcedStep = useRef(null);
 
   const readPositions = useCallback(async () => {
     const session = await getSession();
@@ -105,6 +120,28 @@ export default function JourneyFollowCard({ foundJourneyId, otherName, onPositio
   }
 
   const theirPosition = positions.find((position) => !position.mine);
+  const myPosition = positions.find((position) => position.mine);
+  const metresApart = theirPosition && myPosition ? distanceInMetres(myPosition, theirPosition) : null;
+
+  // Someone who cannot see the screen should not have to keep checking it to
+  // know their pair is arriving. Each distance is announced once, and only
+  // while the pair is getting closer, so pacing around a threshold stays quiet.
+  useEffect(() => {
+    if (metresApart === null) {
+      return;
+    }
+
+    const announcement = approachAnnouncement({
+      metres: metresApart,
+      announcedStep: announcedStep.current,
+      otherName,
+    });
+
+    if (announcement) {
+      announcedStep.current = announcement.step;
+      AccessibilityInfo.announceForAccessibility(announcement.sentence);
+    }
+  }, [metresApart, otherName]);
 
   return (
     <View style={styles.card} testID="journey-follow-card">
@@ -136,10 +173,12 @@ export default function JourneyFollowCard({ foundJourneyId, otherName, onPositio
         />
       </View>
 
-      <Text style={styles.status} testID="follow-status">
-        {theirPosition
-          ? `${theirPosition.firstname ?? "Votre binôme"} partage sa position.`
-          : `${otherName ?? "Votre binôme"} ne partage pas encore sa position.`}
+      <Text style={styles.status} testID="follow-status" accessibilityLiveRegion="polite">
+        {!theirPosition
+          ? `${otherName ?? "Votre binôme"} ne partage pas encore sa position.`
+          : metresApart === null
+            ? `${theirPosition.firstname ?? "Votre binôme"} partage sa position.`
+            : `${theirPosition.firstname ?? "Votre binôme"} est à ${formatDistance(metresApart)} de vous.`}
       </Text>
 
       <TouchableOpacity

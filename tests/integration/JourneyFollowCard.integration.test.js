@@ -1,5 +1,5 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
-import { Alert, Share } from "react-native";
+import { AccessibilityInfo, Alert, Share } from "react-native";
 
 import JourneyFollowCard from "../../components/JourneyFollowCard";
 import { createShareLink, getPositions, recordPosition } from "../../utils/following";
@@ -122,6 +122,63 @@ describe("JourneyFollowCard — Integration Tests", () => {
 
         await waitFor(() => {
             expect(Alert.alert).toHaveBeenCalledWith("Lien de suivi", "http://web/#/suivi/abc");
+        });
+    });
+
+    describe("as the pair gets closer", () => {
+        const BASTILLE = { lat: "48.8532", lon: "2.3692", mine: true, firstname: "Nina" };
+        const near = (metres) => ({
+            lat: String(48.8532 + metres / 111320),
+            lon: "2.3692",
+            mine: false,
+            firstname: "Léo",
+        });
+
+        beforeEach(() => {
+            jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(() => {});
+        });
+
+        it("says how far away the pair is", async () => {
+            getPositions.mockResolvedValue({ success: true, positions: [BASTILLE, near(180)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+
+            expect((await findByTestId("follow-status")).props.children).toContain("Léo est à");
+        });
+
+        it("announces the pair coming within a distance", async () => {
+            getPositions.mockResolvedValue({ success: true, positions: [BASTILLE, near(180)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+            await findByTestId("follow-status");
+
+            await waitFor(() => {
+                expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+                    "Léo est à moins de 200 mètres.",
+                );
+            });
+        });
+
+        it("stays quiet while the pair is still far off", async () => {
+            getPositions.mockResolvedValue({ success: true, positions: [BASTILLE, near(1500)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+            const status = await findByTestId("follow-status");
+
+            // Far enough that metres would be noise, so it reads in kilometres.
+            expect(status.props.children).toContain("1,5 kilomètres");
+            expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
+        });
+
+        it("says only that the pair is sharing when the user is not", async () => {
+            getPositions.mockResolvedValue({ success: true, positions: [near(180)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+
+            expect((await findByTestId("follow-status")).props.children).toContain(
+                "Léo partage sa position.",
+            );
+            expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
         });
     });
 
