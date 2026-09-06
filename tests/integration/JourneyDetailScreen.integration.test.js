@@ -25,6 +25,25 @@ jest.mock("../../utils/users", () => ({
     getUserProfile: jest.fn(),
 }));
 
+// The map renders a WebView, so what it was asked to draw is checked through
+// the props rather than through the page it builds.
+jest.mock("../../components/JourneyMap", () => {
+    const { View } = require("react-native");
+    return function JourneyMapMock({ mine, other }) {
+        if (!mine?.departure) {
+            return null;
+        }
+        return (
+            <View
+                testID="journey-map"
+                accessible
+                accessibilityLabel={`Carte de l'itinéraire, de ${mine.departure.label} à ${mine.arrival?.label}.`}
+                accessibilityState={{ selected: Boolean(other) }}
+            />
+        );
+    };
+});
+
 // The review card lives on a journey already travelled; keep it inert elsewhere.
 jest.mock("../../utils/reviews", () => ({
     getMyJourneyReview: jest.fn().mockResolvedValue({ success: true, review: null }),
@@ -57,6 +76,19 @@ const JOURNEY = {
     arrivalAddress: "Gare de Lyon, Paris",
     departureTime: IN_AN_HOUR,
     arrivalTime: IN_TWO_HOURS,
+};
+
+// The journey as the map needs it: the plain fixture carries no coordinates.
+const MAPPED_JOURNEY = {
+    id: 8,
+    departureAddress: "12 Rue de Rivoli, Paris",
+    arrivalAddress: "Gare de Lyon, Paris",
+    departureTime: IN_AN_HOUR,
+    arrivalTime: IN_TWO_HOURS,
+    departureLat: "48.8558",
+    departureLon: "2.3588",
+    arrivalLat: "48.8443",
+    arrivalLon: "2.3743",
 };
 
 const otherJourney = {
@@ -353,6 +385,61 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         fireEvent.press(await findByLabelText("Retour"));
 
         expect(mockGoBack).toHaveBeenCalled();
+    });
+
+    it("draws one path when the pair travels the same trip", async () => {
+        // Their trip starts and ends where mine does, give or take the metres
+        // between two geocoded doorways. Drawing it again would lay a second
+        // line across the map, which reads as a mistake.
+        getJourney.mockResolvedValue({ success: true, journey: MAPPED_JOURNEY });
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{
+                ...CONFIRMED_MATCH,
+                journey: {
+                    ...otherJourney,
+                    departureLat: "48.8559",
+                    departureLon: "2.3589",
+                    arrivalLat: "48.8443",
+                    arrivalLon: "2.3743",
+                },
+            }],
+        });
+
+        const { findByTestId } = render(<JourneyDetailScreen />);
+
+        expect((await findByTestId("journey-map")).props.accessibilityState.selected).toBe(false);
+    });
+
+    it("draws one path when the pair's trip cannot be measured against mine", async () => {
+        // A second line drawn on a guess is worse than no second line.
+        getJourney.mockResolvedValue({ success: true, journey: MAPPED_JOURNEY });
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{
+                ...CONFIRMED_MATCH,
+                journey: { ...otherJourney, arrivalLat: null, arrivalLon: null },
+            }],
+        });
+
+        const { findByTestId } = render(<JourneyDetailScreen />);
+
+        expect((await findByTestId("journey-map")).props.accessibilityState.selected).toBe(false);
+    });
+
+    it("draws the pair's path when they come from somewhere else", async () => {
+        getJourney.mockResolvedValue({ success: true, journey: MAPPED_JOURNEY });
+        getJourneyMatches.mockResolvedValue({
+            success: true,
+            matches: [{
+                ...CONFIRMED_MATCH,
+                journey: { ...otherJourney, departureLat: "48.8900", departureLon: "2.2400" },
+            }],
+        });
+
+        const { findByTestId } = render(<JourneyDetailScreen />);
+
+        expect((await findByTestId("journey-map")).props.accessibilityState.selected).toBe(true);
     });
 
     it("shows the itinerary map when the journey has coordinates", async () => {

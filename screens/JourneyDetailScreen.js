@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -24,8 +24,37 @@ import StarRating from "../components/StarRating";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
+import { distanceInMetres } from "../utils/proximity";
+import { getWalkingRoute } from "../utils/routing";
 import { getSession } from "../utils/session";
 import { getUserProfile } from "../utils/users";
+
+// Two addresses geocode a few dozen metres apart when they name the same place
+// from either side of a square, so "the same trip" has to be a distance rather
+// than an equality.
+const SAME_TRIP_M = 200;
+
+/**
+ * Whether the pair's trip is different enough from the user's to be worth
+ * drawing on its own. Anything that cannot be measured counts as the same trip:
+ * a second line drawn on a guess is worse than no second line.
+ * @param {object} mine - The user's trip, as the map takes it.
+ * @param {object} theirs - The pair's trip, as the map takes it.
+ * @returns {boolean} True when their trip deserves its own line.
+ */
+function goesElsewhere(mine, theirs) {
+  if (!mine || !theirs) {
+    return false;
+  }
+
+  const atStart = distanceInMetres(mine.departure, theirs.departure);
+  const atEnd = distanceInMetres(mine.arrival, theirs.arrival);
+  if (atStart === null || atEnd === null) {
+    return false;
+  }
+
+  return atStart > SAME_TRIP_M || atEnd > SAME_TRIP_M;
+}
 
 export default function JourneyDetailScreen() {
   const navigation = useNavigation();
@@ -39,6 +68,7 @@ export default function JourneyDetailScreen() {
   const [respondingId, setRespondingId] = useState(null);
   const [livePositions, setLivePositions] = useState([]);
   const [trustedContact, setTrustedContact] = useState(null);
+  const [walkingRoute, setWalkingRoute] = useState(null);
 
   const handleCall = useCallback((phoneNumber) => {
     const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
@@ -122,12 +152,47 @@ export default function JourneyDetailScreen() {
         arrival: { lat: journey.arrivalLat, lon: journey.arrivalLon, label: journey.arrivalAddress },
       }
     : null;
-  const mapOther = otherTrip
+  const otherTripPath = otherTrip
     ? {
         departure: { lat: otherTrip.departureLat, lon: otherTrip.departureLon, label: otherTrip.departureAddress },
         arrival: { lat: otherTrip.arrivalLat, lon: otherTrip.arrivalLon, label: otherTrip.arrivalAddress },
       }
     : undefined;
+
+  // The pair's trip is only worth its own line when it actually goes somewhere
+  // else. A companion who meets you at the door and rides to the same place has
+  // your trip, and drawing it again puts a second path across the map that
+  // looks like a mistake — which is what it looked like.
+  const mapOther = goesElsewhere(mapMine, otherTripPath) ? otherTripPath : undefined;
+
+  // The walking path is asked for after the journey is on screen, never before:
+  // the map is readable without it, and a routing service being slow must not
+  // hold up the rest of the page.
+  // Held by their coordinates rather than by identity: the objects above are
+  // rebuilt on every render, and asking for the same route each time would
+  // hammer the routing service for nothing.
+  const ends = useMemo(
+    () => (mapMine ? { from: mapMine.departure, to: mapMine.arrival } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapMine?.departure?.lat, mapMine?.departure?.lon, mapMine?.arrival?.lat, mapMine?.arrival?.lon],
+  );
+
+  useEffect(() => {
+    let current = true;
+    if (!ends) {
+      return undefined;
+    }
+
+    getWalkingRoute(ends).then((found) => {
+      if (current) {
+        setWalkingRoute(found);
+      }
+    });
+
+    return () => {
+      current = false;
+    };
+  }, [ends]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -214,6 +279,7 @@ export default function JourneyDetailScreen() {
                   other={mapOther}
                   meeting={mapMine.departure}
                   positions={livePositions}
+                  route={walkingRoute}
                 />
               </>
             )}

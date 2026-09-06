@@ -15,7 +15,12 @@ const EARTH_RADIUS_M = 6371000;
  * @returns {number|null} The distance in metres, or null when a coordinate is unusable.
  */
 function distanceInMetres(from, to) {
-  const coordinates = [from?.lat, from?.lon, to?.lat, to?.lon].map(Number);
+  // Not plain Number(): it turns null and "" into 0, which would measure the
+  // distance to the Gulf of Guinea instead of refusing a coordinate that is
+  // simply not there.
+  const coordinates = [from?.lat, from?.lon, to?.lat, to?.lon].map((value) =>
+    value === null || value === undefined || value === "" ? NaN : Number(value),
+  );
   if (coordinates.some((coordinate) => !Number.isFinite(coordinate))) {
     return null;
   }
