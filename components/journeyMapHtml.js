@@ -16,12 +16,13 @@ import { colors } from "../theme/tokens";
  * @param {{ mine: {departure: Point, arrival: Point}, other?: {departure: Point, arrival: Point}, meeting?: Point, positions?: object[] }} data
  * @returns {string} HTML document.
  */
-function buildHtml({ mine, other, meeting, positions }) {
+function buildHtml({ mine, other, meeting, positions, route }) {
   const config = JSON.stringify({
     mine,
     other: other ?? null,
     meeting: meeting ?? null,
     positions: positions ?? [],
+    route: route ?? null,
     palette: {
       teal: colors.teal,
       tealDark: colors.tealDark,
@@ -97,14 +98,20 @@ function buildHtml({ mine, other, meeting, positions }) {
     new maplibregl.Marker({ element: el }).setLngLat(lngLatValue).addTo(map);
   }
 
-  function drawTrip(id, trip, color, dashed) {
+  function drawTrip(id, trip, color, dashed, route) {
     if (!trip) { return; }
     var from = lngLat(trip.departure), to = lngLat(trip.arrival);
     points.push(from, to);
 
+    // A real walking path when one was found, the straight line otherwise. The
+    // straight line is dashed so it never passes for a route someone can walk.
+    var walked = route && route.length > 1;
+    var line = walked ? route : [from, to];
+    if (walked) { for (var i = 0; i < route.length; i += 1) { points.push(route[i]); } }
+
     map.addSource(id, {
       type: 'geojson',
-      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [from, to] } },
+      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: line } },
     });
     map.addLayer({
       id: id + '-line',
@@ -113,7 +120,7 @@ function buildHtml({ mine, other, meeting, positions }) {
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: Object.assign(
         { 'line-color': color, 'line-width': dashed ? 3 : 5, 'line-opacity': dashed ? 0.75 : 0.95 },
-        dashed ? { 'line-dasharray': [1.5, 1.5] } : {},
+        (dashed || !walked) ? { 'line-dasharray': [1.5, 1.5] } : {},
       ),
     });
 
@@ -122,7 +129,7 @@ function buildHtml({ mine, other, meeting, positions }) {
   }
 
   map.on('load', function () {
-    drawTrip('mine', C.mine, C.palette.teal, false);
+    drawTrip('mine', C.mine, C.palette.teal, false, C.route);
     drawTrip('other', C.other, C.palette.tealDark, true);
 
     if (C.meeting) {

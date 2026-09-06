@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -24,6 +24,7 @@ import StarRating from "../components/StarRating";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
+import { getWalkingRoute } from "../utils/routing";
 import { getSession } from "../utils/session";
 import { getUserProfile } from "../utils/users";
 
@@ -39,6 +40,7 @@ export default function JourneyDetailScreen() {
   const [respondingId, setRespondingId] = useState(null);
   const [livePositions, setLivePositions] = useState([]);
   const [trustedContact, setTrustedContact] = useState(null);
+  const [walkingRoute, setWalkingRoute] = useState(null);
 
   const handleCall = useCallback((phoneNumber) => {
     const url = `tel:${String(phoneNumber).replace(/\s+/g, "")}`;
@@ -129,6 +131,35 @@ export default function JourneyDetailScreen() {
       }
     : undefined;
 
+  // The walking path is asked for after the journey is on screen, never before:
+  // the map is readable without it, and a routing service being slow must not
+  // hold up the rest of the page.
+  // Held by their coordinates rather than by identity: the objects above are
+  // rebuilt on every render, and asking for the same route each time would
+  // hammer the routing service for nothing.
+  const ends = useMemo(
+    () => (mapMine ? { from: mapMine.departure, to: mapMine.arrival } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapMine?.departure?.lat, mapMine?.departure?.lon, mapMine?.arrival?.lat, mapMine?.arrival?.lon],
+  );
+
+  useEffect(() => {
+    let current = true;
+    if (!ends) {
+      return undefined;
+    }
+
+    getWalkingRoute(ends).then((found) => {
+      if (current) {
+        setWalkingRoute(found);
+      }
+    });
+
+    return () => {
+      current = false;
+    };
+  }, [ends]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -214,6 +245,7 @@ export default function JourneyDetailScreen() {
                   other={mapOther}
                   meeting={mapMine.departure}
                   positions={livePositions}
+                  route={walkingRoute}
                 />
               </>
             )}
