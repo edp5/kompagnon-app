@@ -171,10 +171,12 @@ export default function ProfileScreen() {
             )}
 
             <Text style={styles.sectionTitle}>Sécurité</Text>
-            <TrustedContactCard
-              contact={profile.trustedContact}
-              onChange={(trustedContact) => setProfile((current) => ({ ...current, trustedContact }))}
-            />
+            <View style={styles.securityBlock}>
+              <TrustedContactCard
+                contact={profile.trustedContact}
+                onChange={(trustedContact) => setProfile((current) => ({ ...current, trustedContact }))}
+              />
+            </View>
 
             <Text style={styles.sectionTitle}>Plus</Text>
             <View style={styles.menuCard}>
@@ -211,6 +213,11 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  // The card comes from a shared component, so the space that separates it from
+  // the next section belongs to this screen rather than inside the component.
+  securityBlock: {
+    marginBottom: 28,
+  },
   menuCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
