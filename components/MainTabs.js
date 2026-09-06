@@ -42,7 +42,9 @@ const styles = {
     backgroundColor: colors.surface,
     borderTopColor: colors.beige,
     borderTopWidth: 1,
-    height: 64,
+    // Not a fixed height: the labels grow with the system text size, and a
+    // fixed bar would clip them just when someone has asked for larger text.
+    minHeight: 64,
     paddingTop: 6,
     paddingBottom: 8,
     ...shadow.card,
