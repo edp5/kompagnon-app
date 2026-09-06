@@ -6,7 +6,7 @@ import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, Vi
 import appJson from "../app.json";
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 
 const VERSION = appJson?.expo?.version ?? "1.0.0";
 
@@ -68,7 +68,7 @@ export default function AboutScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", marginBottom: 16, ...shadow.card,

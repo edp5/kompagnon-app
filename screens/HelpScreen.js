@@ -5,7 +5,7 @@ import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, 
 
 import Accordion from "../components/Accordion";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { resetOnboarding } from "../utils/onboarding";
 
 const SUPPORT_EMAIL = "contact@kompagnon.dev";
@@ -120,7 +120,7 @@ export default function HelpScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", marginBottom: 16, ...shadow.card,

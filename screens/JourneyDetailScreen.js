@@ -21,7 +21,7 @@ import JourneyMap from "../components/JourneyMap";
 import JourneyReviewCard from "../components/JourneyReviewCard";
 import MeetingCode from "../components/MeetingCode";
 import StarRating from "../components/StarRating";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
 import { getSession } from "../utils/session";
@@ -184,10 +184,12 @@ export default function JourneyDetailScreen() {
                   <Icon name="map-pin" size={15} color={colors.tealDark} />
                 </View>
                 <View style={styles.stepBody}>
-                  <Text style={styles.stepLabel}>Départ</Text>
+                  <View style={styles.stepHead}>
+                    <Text style={styles.stepLabel}>Départ</Text>
+                    <Text style={styles.stepTime}>{formatTime(journey.departureTime)}</Text>
+                  </View>
                   <Text style={styles.stepValue}>{journey.departureAddress}</Text>
                 </View>
-                <Text style={styles.stepTime}>{formatTime(journey.departureTime)}</Text>
               </View>
 
               <View style={styles.step}>
@@ -195,10 +197,12 @@ export default function JourneyDetailScreen() {
                   <Icon name="flag" size={15} color={colors.tealDark} />
                 </View>
                 <View style={styles.stepBody}>
-                  <Text style={styles.stepLabel}>Arrivée</Text>
+                  <View style={styles.stepHead}>
+                    <Text style={styles.stepLabel}>Arrivée</Text>
+                    <Text style={styles.stepTime}>{formatTime(journey.arrivalTime)}</Text>
+                  </View>
                   <Text style={styles.stepValue}>{journey.arrivalAddress}</Text>
                 </View>
-                <Text style={styles.stepTime}>{formatTime(journey.arrivalTime)}</Text>
               </View>
             </View>
 
@@ -339,14 +343,14 @@ function MatchCard({ match, responding, onRespond, onCall, onChat }) {
         <Text style={styles.otherTripTitle}>Son trajet</Text>
         <View style={styles.otherTripRow}>
           <Icon name="map-pin" size={13} color={colors.textLight} />
-          <Text style={styles.otherTripText} numberOfLines={1}>
+          <Text style={styles.otherTripText}>
             {match.journey?.departureAddress}
           </Text>
           <Text style={styles.otherTripTime}>{formatTime(match.journey?.departureTime)}</Text>
         </View>
         <View style={styles.otherTripRow}>
           <Icon name="flag" size={13} color={colors.textLight} />
-          <Text style={styles.otherTripText} numberOfLines={1}>
+          <Text style={styles.otherTripText}>
             {match.journey?.arrivalAddress}
           </Text>
           <Text style={styles.otherTripTime}>{formatTime(match.journey?.arrivalTime)}</Text>
@@ -417,6 +421,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scrollContent: {
+    ...layout.content,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,
@@ -499,11 +504,20 @@ const styles = StyleSheet.create({
   stepBody: {
     flex: 1,
   },
+  // The label and the time are both short pieces of metadata, so they share a
+  // line and leave the address the full width of the card. Side by side with
+  // the address, the time squeezed it to eighteen characters a line.
+  stepHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 2,
+  },
   stepLabel: {
     fontSize: 12,
     fontFamily: fonts.bodySemiBold,
     color: colors.textLight,
-    marginBottom: 2,
   },
   stepValue: {
     fontSize: 15,
@@ -679,7 +693,9 @@ const styles = StyleSheet.create({
   },
   otherTripRow: {
     flexDirection: "row",
-    alignItems: "center",
+    // Top-aligned: an address long enough to wrap should push the icon and the
+    // time to its first line, not float them against its middle.
+    alignItems: "flex-start",
     gap: 8,
     marginBottom: 6,
   },
@@ -690,6 +706,8 @@ const styles = StyleSheet.create({
     color: colors.navy,
   },
   otherTripTime: {
+    // The time is short and always fits; the address is what has to give way.
+    flexShrink: 0,
     fontSize: 13,
     fontFamily: fonts.bodySemiBold,
     color: colors.textMedium,

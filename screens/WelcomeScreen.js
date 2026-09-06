@@ -5,7 +5,7 @@ import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "r
 
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 
 /**
  * First screen shown to a visitor who is not logged in. It presents the app and
@@ -57,6 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   container: {
+    ...layout.content,
     flex: 1,
     justifyContent: "space-between",
     paddingHorizontal: 24,

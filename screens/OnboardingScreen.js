@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { markOnboardingSeen } from "../utils/onboarding";
 import { getSession } from "../utils/session";
 
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   topBar: { alignItems: "flex-end", paddingHorizontal: 16, paddingTop: 8 },
   skip: { paddingVertical: 12, paddingHorizontal: 12, minHeight: 44, justifyContent: "center" },
   skipText: { fontSize: 15, fontFamily: fonts.bodyBold, color: colors.textMedium },
-  slide: { alignItems: "center", justifyContent: "center", paddingHorizontal: 36 },
+  slide: { ...layout.content, alignItems: "center", justifyContent: "center", paddingHorizontal: 36 },
   iconCircle: {
     width: 112, height: 112, borderRadius: radius.full, backgroundColor: colors.tealLight,
     alignItems: "center", justifyContent: "center", marginBottom: 32, ...shadow.card,

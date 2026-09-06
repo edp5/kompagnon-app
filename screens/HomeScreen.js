@@ -13,7 +13,7 @@ import {
 
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { checkHealth } from "../utils/api-fetch";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getUpcomingMatchedJourneys } from "../utils/journeys";
@@ -125,12 +125,12 @@ export default function HomeScreen() {
             </View>
             <View style={styles.leg}>
               <Icon name="map-pin" size={14} color={colors.tealDark} />
-              <Text style={styles.legText} numberOfLines={1}>{nextJourney.departureAddress}</Text>
+              <Text style={styles.legText} numberOfLines={2}>{nextJourney.departureAddress}</Text>
               <Text style={styles.legTime}>{formatTime(nextJourney.departureTime)}</Text>
             </View>
             <View style={styles.leg}>
               <Icon name="flag" size={14} color={colors.textLight} />
-              <Text style={styles.legText} numberOfLines={1}>{nextJourney.arrivalAddress}</Text>
+              <Text style={styles.legText} numberOfLines={2}>{nextJourney.arrivalAddress}</Text>
               <Text style={styles.legTime}>{formatTime(nextJourney.arrivalTime)}</Text>
             </View>
           </TouchableOpacity>
@@ -149,7 +149,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -205,9 +205,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4, paddingHorizontal: 10, borderRadius: radius.full, backgroundColor: colors.sand,
   },
   pendingText: { fontSize: 11, fontFamily: fonts.bodyBold, color: colors.warning },
-  leg: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+  // Top-aligned: a long address takes two lines and the time belongs beside
+  // its first one.
+  leg: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
   legText: { flex: 1, fontSize: 14, fontFamily: fonts.body, color: colors.navy },
-  legTime: { fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.textMedium },
+  legTime: { flexShrink: 0, fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.textMedium },
   emptyCard: {
     alignItems: "center", gap: 8,
     backgroundColor: colors.surface, borderRadius: radius.lg, paddingVertical: 32, paddingHorizontal: 24, ...shadow.card,

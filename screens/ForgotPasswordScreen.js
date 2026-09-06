@@ -17,7 +17,7 @@ import {
 import logo from "../assets/kompagnon-logo.png";
 import BrandInput from "../components/BrandInput";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { requestPasswordReset } from "../utils/auth";
 
 /**
@@ -140,7 +140,7 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", marginBottom: 12, ...shadow.card,

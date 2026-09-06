@@ -15,7 +15,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatTime } from "../utils/format";
 import { getJourneyMessages, sendJourneyMessage } from "../utils/messages";
 import { getSession } from "../utils/session";
@@ -196,7 +196,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
+  header: { ...layout.content, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", ...shadow.card,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   errorText: { color: colors.danger, fontSize: 14, fontFamily: fonts.bodyMedium },
   emptyCard: { alignItems: "center", gap: 10, paddingHorizontal: 40, paddingVertical: 32 },
   emptyText: { fontSize: 14, fontFamily: fonts.body, color: colors.textMedium, textAlign: "center", lineHeight: 20 },
-  conversation: { paddingHorizontal: 24, paddingVertical: 12, gap: 10 },
+  conversation: { ...layout.content, paddingHorizontal: 24, paddingVertical: 12, gap: 10 },
   bubble: { maxWidth: "82%", borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10 },
   bubbleMine: { alignSelf: "flex-end", backgroundColor: colors.teal, borderBottomRightRadius: 6 },
   bubbleTheirs: { alignSelf: "flex-start", backgroundColor: colors.surface, borderBottomLeftRadius: 6, ...shadow.card },
@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
   bubbleTime: { fontSize: 11, fontFamily: fonts.body, color: colors.textLight, marginTop: 4, alignSelf: "flex-end" },
   bubbleTimeMine: { color: "rgba(255,255,255,0.85)" },
   composer: {
+    ...layout.content,
     flexDirection: "row", alignItems: "flex-end", gap: 10,
     paddingHorizontal: 24, paddingTop: 10, paddingBottom: 16,
     borderTopWidth: 1, borderTopColor: colors.beige, backgroundColor: colors.bg,

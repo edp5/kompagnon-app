@@ -58,7 +58,7 @@ export default function StarRating({ value = 0, onChange, label, testID }) {
   }
 
   return (
-    <View style={styles.row} accessibilityRole="radiogroup" testID={testID}>
+    <View style={styles.editableRow} accessibilityRole="radiogroup" testID={testID}>
       {STARS.map((star) => (
         <TouchableOpacity
           key={star}
@@ -79,6 +79,9 @@ export default function StarRating({ value = 0, onChange, label, testID }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 6 },
+  // Five 44 point targets already fill a narrow screen, so the meaning wraps
+  // underneath rather than being pushed off the side.
+  editableRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   starButton: {
     minWidth: 44,
     minHeight: 44,
@@ -86,5 +89,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radius.sm,
   },
-  meaning: { marginLeft: 4, fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.textMedium },
+  meaning: { marginLeft: 4, flexShrink: 1, fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.textMedium },
 });

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getPastMatchedJourneys, getUpcomingJourneys } from "../utils/journeys";
 import { getSession } from "../utils/session";
@@ -182,12 +182,12 @@ export default function JourneysScreen() {
 
             <View style={styles.leg}>
               <Icon name="map-pin" size={14} color={colors.tealDark} />
-              <Text style={styles.legText} numberOfLines={1}>{journey.departureAddress}</Text>
+              <Text style={styles.legText} numberOfLines={2}>{journey.departureAddress}</Text>
               <Text style={styles.legTime}>{formatTime(journey.departureTime)}</Text>
             </View>
             <View style={styles.leg}>
               <Icon name="flag" size={14} color={colors.textLight} />
-              <Text style={styles.legText} numberOfLines={1}>{journey.arrivalAddress}</Text>
+              <Text style={styles.legText} numberOfLines={2}>{journey.arrivalAddress}</Text>
               <Text style={styles.legTime}>{formatTime(journey.arrivalTime)}</Text>
             </View>
 
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scrollContent: {
+    ...layout.content,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,
@@ -405,7 +406,9 @@ const styles = StyleSheet.create({
   },
   leg: {
     flexDirection: "row",
-    alignItems: "center",
+    // Top-aligned: a long address takes two lines and the time belongs beside
+    // its first one.
+    alignItems: "flex-start",
     gap: 10,
     marginBottom: 8,
   },
@@ -416,6 +419,7 @@ const styles = StyleSheet.create({
     color: colors.navy,
   },
   legTime: {
+    flexShrink: 0,
     fontSize: 13,
     fontFamily: fonts.bodySemiBold,
     color: colors.textMedium,
