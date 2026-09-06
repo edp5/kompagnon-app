@@ -1,14 +1,17 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import * as Speech from "expo-speech";
 import { AccessibilityInfo } from "react-native";
 
 import MeetingCode from "../../components/MeetingCode";
+import { speaksAloud } from "../../utils/preferences";
 
 jest.mock("expo-speech", () => ({ speak: jest.fn(), stop: jest.fn() }));
+jest.mock("../../utils/preferences", () => ({ speaksAloud: jest.fn() }));
 
 describe("MeetingCode — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        speaksAloud.mockResolvedValue(true);
         jest.spyOn(AccessibilityInfo, "announceForAccessibility").mockImplementation(() => {});
     });
 
@@ -44,29 +47,47 @@ describe("MeetingCode — Integration Tests", () => {
         expect(getByText(/votre binôme voit le même code/)).toBeTruthy();
     });
 
-    it("says the digits out loud on demand, screen reader or not", () => {
+    it("says the digits out loud on demand, screen reader or not", async () => {
         const { getByTestId } = render(<MeetingCode code="4821" otherName="Léo" />);
 
         fireEvent.press(getByTestId("meeting-code-speak"));
 
         // Speaking is the point of the button: an accessibility announcement
         // alone only reaches someone who already runs VoiceOver or TalkBack.
-        expect(Speech.speak).toHaveBeenCalledWith("Votre code de rencontre est 4 8 2 1", {
-            language: "fr-FR",
+        await waitFor(() => {
+            expect(Speech.speak).toHaveBeenCalledWith("Votre code de rencontre est 4 8 2 1", {
+                language: "fr-FR",
+            });
         });
         expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
             "Votre code de rencontre est 4 8 2 1",
         );
     });
 
-    it("cuts off whatever it was saying before repeating the code", () => {
+    it("cuts off whatever it was saying before repeating the code", async () => {
         const { getByTestId } = render(<MeetingCode code="4821" />);
 
         fireEvent.press(getByTestId("meeting-code-speak"));
         fireEvent.press(getByTestId("meeting-code-speak"));
 
-        expect(Speech.stop).toHaveBeenCalledTimes(2);
+        await waitFor(() => {
+            expect(Speech.stop).toHaveBeenCalledTimes(2);
+        });
         expect(Speech.speak).toHaveBeenCalledTimes(2);
+    });
+
+    it("keeps quiet when the user asked for silence, but still tells the screen reader", async () => {
+        speaksAloud.mockResolvedValue(false);
+
+        const { getByTestId } = render(<MeetingCode code="4821" />);
+        fireEvent.press(getByTestId("meeting-code-speak"));
+
+        await waitFor(() => {
+            expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalled();
+        });
+        // The announcement is how the app talks to a screen reader; the switch
+        // only governs the phone speaking on its own.
+        expect(Speech.speak).not.toHaveBeenCalled();
     });
 
     it("keeps a repeated digit rather than collapsing it", () => {

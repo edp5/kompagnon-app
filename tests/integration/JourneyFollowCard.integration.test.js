@@ -1,7 +1,10 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { AccessibilityInfo, Alert, Share } from "react-native";
 
+import * as Speech from "expo-speech";
+
 import JourneyFollowCard from "../../components/JourneyFollowCard";
+import { speaksAloud } from "../../utils/preferences";
 import { createShareLink, getPositions, recordPosition } from "../../utils/following";
 import { getCurrentPosition } from "../../utils/location";
 import { getSession } from "../../utils/session";
@@ -13,12 +16,15 @@ jest.mock("../../utils/following", () => ({
 }));
 jest.mock("../../utils/location", () => ({ getCurrentPosition: jest.fn() }));
 jest.mock("../../utils/session", () => ({ getSession: jest.fn() }));
+jest.mock("../../utils/preferences", () => ({ speaksAloud: jest.fn() }));
+jest.mock("expo-speech", () => ({ speak: jest.fn(), stop: jest.fn() }));
 
 const THEIR_POSITION = { lat: "48.87", lon: "2.33", mine: false, firstname: "Bob" };
 
 describe("JourneyFollowCard — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        speaksAloud.mockResolvedValue(true);
         getSession.mockResolvedValue({ token: "jwt", userId: 12 });
         getPositions.mockResolvedValue({ success: true, positions: [] });
         recordPosition.mockResolvedValue({ success: true });
@@ -157,6 +163,34 @@ describe("JourneyFollowCard — Integration Tests", () => {
                     "Léo est à moins de 200 mètres.",
                 );
             });
+        });
+
+        it("says the approach out loud", async () => {
+            getPositions.mockResolvedValue({ success: true, positions: [BASTILLE, near(180)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+            await findByTestId("follow-status");
+
+            await waitFor(() => {
+                expect(Speech.speak).toHaveBeenCalledWith("Léo est à moins de 200 mètres.", {
+                    language: "fr-FR",
+                });
+            });
+        });
+
+        it("keeps the phone quiet when the user asked for silence", async () => {
+            speaksAloud.mockResolvedValue(false);
+            getPositions.mockResolvedValue({ success: true, positions: [BASTILLE, near(180)] });
+
+            const { findByTestId } = render(<JourneyFollowCard foundJourneyId={3} otherName="Léo" />);
+            await findByTestId("follow-status");
+
+            await waitFor(() => {
+                // The screen reader is still told: the switch governs the phone
+                // speaking on its own, not how the app talks to a screen reader.
+                expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalled();
+            });
+            expect(Speech.speak).not.toHaveBeenCalled();
         });
 
         it("stays quiet while the pair is still far off", async () => {

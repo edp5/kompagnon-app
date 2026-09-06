@@ -3,6 +3,7 @@ import React from "react";
 import { AccessibilityInfo, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { speaksAloud } from "../utils/preferences";
 import Icon from "./Icon";
 
 /**
@@ -25,14 +26,18 @@ function spellOut(code) {
  * reader, or anyone whose hands are busy holding a cane.
  *
  * @param {string} spoken - The digits, spaced apart.
+ * @returns {Promise<void>}
  */
-function sayOutLoud(spoken) {
+async function sayOutLoud(spoken) {
   const sentence = `Votre code de rencontre est ${spoken}`;
-  // Both: the screen reader announcement keeps the code in the accessibility
-  // history for someone reading back through it.
+  // The screen reader announcement is not a setting: it is how the app talks to
+  // someone who uses one, and it stays whatever the spoken switch says.
   AccessibilityInfo.announceForAccessibility(sentence);
-  Speech.stop();
-  Speech.speak(sentence, { language: "fr-FR" });
+
+  if (await speaksAloud()) {
+    Speech.stop();
+    Speech.speak(sentence, { language: "fr-FR" });
+  }
 }
 
 /**

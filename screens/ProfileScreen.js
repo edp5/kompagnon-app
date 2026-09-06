@@ -76,6 +76,7 @@ export default function ProfileScreen() {
   };
 
   const MENU = [
+    { label: "Réglages", icon: "sliders", screen: "Settings" },
     { label: "Aide & support", icon: "help-circle", screen: "Help" },
     { label: "Confidentialité", icon: "shield", screen: "Privacy" },
     { label: "Conditions d'utilisation", icon: "file-text", screen: "Terms" },
