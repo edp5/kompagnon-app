@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import Icon from "./Icon";
 
 /**
@@ -56,7 +56,7 @@ export default function ContentScreen({ title, intro, sections, testID, footer }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", marginBottom: 16, ...shadow.card,

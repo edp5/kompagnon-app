@@ -15,7 +15,7 @@ import {
 import Icon from "../components/Icon";
 import TrustedContactCard from "../components/TrustedContactCard";
 import { normalizeRole, USER_DISABILITIES, USER_GENRE, USER_ROLES } from "../constants";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { PLACEHOLDER } from "../utils/format";
 import { clearSession, getSession } from "../utils/session";
 import { getUserProfile } from "../utils/users";
@@ -241,6 +241,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scrollContent: {
+    ...layout.content,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,
@@ -356,28 +357,28 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     ...shadow.card,
   },
+  // Label above, value below. Side by side, a value with nothing to wrap at —
+  // an email has no spaces — runs straight off the side of a narrow screen.
+  // Stacked, it gets the whole width of the card and stays readable in full.
   row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    paddingVertical: 14,
+    gap: 2,
+    paddingVertical: 12,
   },
   rowDivider: {
     borderTopWidth: 1,
     borderTopColor: colors.beige,
   },
   rowLabel: {
-    fontSize: 14,
-    fontFamily: fonts.body,
-    color: colors.textMedium,
+    fontSize: 12,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.textLight,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   rowValue: {
-    flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: fonts.bodySemiBold,
     color: colors.navy,
-    textAlign: "right",
   },
   tagsCard: {
     flexDirection: "row",

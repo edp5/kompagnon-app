@@ -16,7 +16,7 @@ import {
 import BrandInput from "../components/BrandInput";
 import Icon from "../components/Icon";
 import { USER_ROLES } from "../constants";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { activateAccount } from "../utils/auth";
 
 const PHONE_PATTERN = /^0[67]\d{8}$/;
@@ -179,7 +179,7 @@ export default function ActivateAccountScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   backButton: {
     width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.surface,
     alignItems: "center", justifyContent: "center", marginBottom: 16, ...shadow.card,

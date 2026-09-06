@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getPastMatchedJourneys, getUpcomingJourneys } from "../utils/journeys";
 import { getSession } from "../utils/session";
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scrollContent: {
+    ...layout.content,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,

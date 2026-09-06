@@ -16,7 +16,7 @@ import {
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { recordJourney } from "../utils/journeys";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "../utils/location";
 import { getSession } from "../utils/session";
@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    ...layout.content,
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 16,

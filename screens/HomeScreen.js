@@ -13,7 +13,7 @@ import {
 
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { checkHealth } from "../utils/api-fetch";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getUpcomingMatchedJourneys } from "../utils/journeys";
@@ -149,7 +149,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  scrollContent: { ...layout.content, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
   topRow: {
     flexDirection: "row",
     alignItems: "center",

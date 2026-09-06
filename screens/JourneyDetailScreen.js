@@ -21,7 +21,7 @@ import JourneyMap from "../components/JourneyMap";
 import JourneyReviewCard from "../components/JourneyReviewCard";
 import MeetingCode from "../components/MeetingCode";
 import StarRating from "../components/StarRating";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
 import { getSession } from "../utils/session";
@@ -417,6 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   scrollContent: {
+    ...layout.content,
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 40,

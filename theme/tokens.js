@@ -46,6 +46,16 @@ export const colors = {
   dangerBorder: "rgba(212, 58, 58, 0.22)",
 };
 
+// -- Layout --
+// The app is drawn as a phone-shaped column. Left to stretch, a tablet turns
+// every button into a 700 point bar and every paragraph into a line too long to
+// track by eye, so the content keeps the width the design was drawn for and
+// centres itself in whatever space is left.
+export const layout = {
+  maxContentWidth: 560,
+  content: { width: "100%", maxWidth: 560, alignSelf: "center" },
+};
+
 // -- Border radius (px) --
 export const radius = {
   xs: 6,

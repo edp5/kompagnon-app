@@ -18,7 +18,7 @@ import {
 import logo from "../assets/kompagnon-logo.png";
 import BrandInput from "../components/BrandInput";
 import PasswordInput from "../components/PasswordInput";
-import { colors, fonts, radius, shadow } from "../theme/tokens";
+import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { apiFetch } from "../utils/api-fetch";
 import { saveSession } from "../utils/session";
 
@@ -212,6 +212,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    ...layout.content,
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 40,
