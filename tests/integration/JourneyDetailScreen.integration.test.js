@@ -57,6 +57,7 @@ const CONFIRMED_MATCH = {
     foundJourneyId: 1,
     user: { firstname: "Bob", lastname: "Durand", phoneNumber: "0622222222" },
     journey: otherJourney,
+    meetingCode: "4821",
     myStatus: "accepted",
     otherStatus: "accepted",
 };
@@ -112,6 +113,21 @@ describe("JourneyDetailScreen — Integration Tests", () => {
         expect(getByText("Trajet confirmé")).toBeTruthy();
         expect(queryByText("0622222222")).toBeNull();
         expect(getByText("Appeler")).toBeTruthy();
+    });
+
+    it("shows the meeting code of a confirmed match", async () => {
+        const { findByTestId } = render(<JourneyDetailScreen />);
+
+        expect(await findByTestId("meeting-code")).toBeTruthy();
+    });
+
+    it("does not show a meeting code on a match still waiting for an answer", async () => {
+        getJourneyMatches.mockResolvedValue({ success: true, matches: [PENDING_MATCH] });
+
+        const { findByText, queryByTestId } = render(<JourneyDetailScreen />);
+        await findByText("Alice Martin");
+
+        expect(queryByTestId("meeting-code")).toBeNull();
     });
 
     it("launches a phone call to the pair when tapping the call button", async () => {

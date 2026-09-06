@@ -17,6 +17,7 @@ import {
 import Icon from "../components/Icon";
 import JourneyFollowCard from "../components/JourneyFollowCard";
 import JourneyMap from "../components/JourneyMap";
+import MeetingCode from "../components/MeetingCode";
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
@@ -200,6 +201,13 @@ export default function JourneyDetailScreen() {
                   positions={livePositions}
                 />
               </>
+            )}
+
+            {confirmedMatch && (
+              <MeetingCode
+                code={confirmedMatch.meetingCode}
+                otherName={confirmedMatch.user?.firstname}
+              />
             )}
 
             {confirmedMatch && (
