@@ -27,6 +27,13 @@ describe("Unit | Utils | distanceInMetres", () => {
     expect(distanceInMetres({ lat: "nowhere", lon: 2.35 }, { lat: 48.85, lon: 2.35 })).toBeNull();
     expect(distanceInMetres(null, { lat: 48.85, lon: 2.35 })).toBeNull();
   });
+
+  it("refuses a null coordinate rather than reading it as zero", () => {
+    // Number(null) is 0, which would put the point off the Gulf of Guinea and
+    // answer a confident, wrong distance.
+    expect(distanceInMetres({ lat: 48.85, lon: 2.35 }, { lat: null, lon: null })).toBeNull();
+    expect(distanceInMetres({ lat: 48.85, lon: 2.35 }, { lat: "", lon: "" })).toBeNull();
+  });
 });
 
 describe("Unit | Utils | approachAnnouncement", () => {

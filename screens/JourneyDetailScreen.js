@@ -24,9 +24,37 @@ import StarRating from "../components/StarRating";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { formatShortDate, formatTime } from "../utils/format";
 import { getJourney, getJourneyMatches, matchState, updateFoundJourneyStatus } from "../utils/journeys";
+import { distanceInMetres } from "../utils/proximity";
 import { getWalkingRoute } from "../utils/routing";
 import { getSession } from "../utils/session";
 import { getUserProfile } from "../utils/users";
+
+// Two addresses geocode a few dozen metres apart when they name the same place
+// from either side of a square, so "the same trip" has to be a distance rather
+// than an equality.
+const SAME_TRIP_M = 200;
+
+/**
+ * Whether the pair's trip is different enough from the user's to be worth
+ * drawing on its own. Anything that cannot be measured counts as the same trip:
+ * a second line drawn on a guess is worse than no second line.
+ * @param {object} mine - The user's trip, as the map takes it.
+ * @param {object} theirs - The pair's trip, as the map takes it.
+ * @returns {boolean} True when their trip deserves its own line.
+ */
+function goesElsewhere(mine, theirs) {
+  if (!mine || !theirs) {
+    return false;
+  }
+
+  const atStart = distanceInMetres(mine.departure, theirs.departure);
+  const atEnd = distanceInMetres(mine.arrival, theirs.arrival);
+  if (atStart === null || atEnd === null) {
+    return false;
+  }
+
+  return atStart > SAME_TRIP_M || atEnd > SAME_TRIP_M;
+}
 
 export default function JourneyDetailScreen() {
   const navigation = useNavigation();
@@ -124,12 +152,18 @@ export default function JourneyDetailScreen() {
         arrival: { lat: journey.arrivalLat, lon: journey.arrivalLon, label: journey.arrivalAddress },
       }
     : null;
-  const mapOther = otherTrip
+  const otherTripPath = otherTrip
     ? {
         departure: { lat: otherTrip.departureLat, lon: otherTrip.departureLon, label: otherTrip.departureAddress },
         arrival: { lat: otherTrip.arrivalLat, lon: otherTrip.arrivalLon, label: otherTrip.arrivalAddress },
       }
     : undefined;
+
+  // The pair's trip is only worth its own line when it actually goes somewhere
+  // else. A companion who meets you at the door and rides to the same place has
+  // your trip, and drawing it again puts a second path across the map that
+  // looks like a mistake — which is what it looked like.
+  const mapOther = goesElsewhere(mapMine, otherTripPath) ? otherTripPath : undefined;
 
   // The walking path is asked for after the journey is on screen, never before:
   // the map is readable without it, and a routing service being slow must not
