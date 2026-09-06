@@ -1,9 +1,11 @@
+import * as Speech from "expo-speech";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, Alert, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 
 import { colors, fonts, radius, shadow } from "../theme/tokens";
 import { createShareLink, getPositions, recordPosition } from "../utils/following";
 import { getCurrentPosition } from "../utils/location";
+import { speaksAloud } from "../utils/preferences";
 import { approachAnnouncement, distanceInMetres } from "../utils/proximity";
 import { getSession } from "../utils/session";
 
@@ -139,7 +141,15 @@ export default function JourneyFollowCard({ foundJourneyId, otherName, onPositio
 
     if (announcement) {
       announcedStep.current = announcement.step;
+      // Announced to the screen reader either way; said out loud only when the
+      // user has not asked for silence.
       AccessibilityInfo.announceForAccessibility(announcement.sentence);
+      speaksAloud().then((allowed) => {
+        if (allowed) {
+          Speech.stop();
+          Speech.speak(announcement.sentence, { language: "fr-FR" });
+        }
+      });
     }
   }, [metresApart, otherName]);
 

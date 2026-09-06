@@ -6,7 +6,6 @@ import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, 
 import Accordion from "../components/Accordion";
 import Icon from "../components/Icon";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
-import { resetOnboarding } from "../utils/onboarding";
 
 const SUPPORT_EMAIL = "contact@kompagnon.dev";
 
@@ -46,11 +45,6 @@ const QUESTIONS = [
 /** Help centre: questions unfold on tap, plus a way to reach a human. */
 export default function HelpScreen() {
   const navigation = useNavigation();
-
-  async function replayIntroduction() {
-    await resetOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: "Onboarding" }] });
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -97,22 +91,6 @@ export default function HelpScreen() {
           <Icon name="chevron-right" size={18} color={colors.textLight} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionRow}
-          onPress={replayIntroduction}
-          accessibilityRole="button"
-          accessibilityLabel="Revoir l'introduction"
-          testID="help-replay"
-        >
-          <View style={[styles.actionIcon, styles.actionIconSoft]}>
-            <Icon name="play-circle" size={18} color={colors.tealDark} />
-          </View>
-          <View style={styles.actionBody}>
-            <Text style={styles.actionTitle}>Revoir l&apos;introduction</Text>
-            <Text style={styles.actionText}>Les trois étapes du fonctionnement de Kompagnon</Text>
-          </View>
-          <Icon name="chevron-right" size={18} color={colors.textLight} />
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

@@ -27,6 +27,7 @@ import JourneyDetailScreen from "./screens/JourneyDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import PrivacyScreen from "./screens/PrivacyScreen";
+import SettingsScreen from "./screens/SettingsScreen";
 import RecordJourneyScreen from "./screens/RecordJourneyScreen";
 import RegistrationScreen from "./screens/RegistrationScreen";
 import ResetPasswordScreen from "./screens/ResetPasswordScreen";
@@ -148,6 +149,7 @@ export default function App() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="ActivateAccount" component={ActivateAccountScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Help" component={HelpScreen} />
           <Stack.Screen name="Privacy" component={PrivacyScreen} />
           <Stack.Screen name="Terms" component={TermsScreen} />

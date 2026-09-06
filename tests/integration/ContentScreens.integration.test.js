@@ -5,9 +5,6 @@ import AboutScreen from "../../screens/AboutScreen";
 import HelpScreen from "../../screens/HelpScreen";
 import PrivacyScreen from "../../screens/PrivacyScreen";
 import TermsScreen from "../../screens/TermsScreen";
-import { resetOnboarding } from "../../utils/onboarding";
-
-jest.mock("../../utils/onboarding", () => ({ resetOnboarding: jest.fn() }));
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
@@ -19,7 +16,6 @@ jest.mock("@react-navigation/native", () => ({
 describe("Help, privacy, terms and about — Integration Tests", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        resetOnboarding.mockResolvedValue(undefined);
         jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     });
 
@@ -51,17 +47,6 @@ describe("Help, privacy, terms and about — Integration Tests", () => {
             fireEvent.press(getByTestId("help-contact"));
 
             expect(Linking.openURL).toHaveBeenCalledWith("mailto:contact@kompagnon.dev");
-        });
-
-        it("replays the introduction", async () => {
-            const { getByTestId } = render(<HelpScreen />);
-
-            fireEvent.press(getByTestId("help-replay"));
-
-            await waitFor(() => {
-                expect(resetOnboarding).toHaveBeenCalled();
-                expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: "Onboarding" }] });
-            });
         });
 
         it("goes back", () => {
