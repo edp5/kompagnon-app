@@ -34,6 +34,45 @@ export function normalizeRole(role) {
 }
 
 /**
+ * The words each side of the app is addressed with.
+ *
+ * A companion offers a trip they are making so someone can be matched to it; a
+ * passenger asks to be accompanied on theirs. Same form, same endpoint, opposite
+ * sentences — and until now both sides read the passenger's, so a volunteer
+ * opened the app and was invited to ask for help.
+ * @readonly
+ */
+export const ROLE_COPY = {
+  companion: {
+    tagline: "Vos trajets rendent ceux des autres possibles.",
+    action: "Proposer un accompagnement",
+    nextHeading: "Votre prochain accompagnement",
+    empty: "Aucun accompagnement prévu. Proposez un trajet et nous vous mettrons en relation.",
+    formQuestion: "Quel trajet faites-vous ? Nous y associerons une personne à accompagner.",
+  },
+  passenger: {
+    tagline: "L'accompagnement accessible, pensé pour tous.",
+    action: "Demander un accompagnement",
+    nextHeading: "Votre prochain trajet",
+    empty: "Aucun trajet à venir. Demandez un accompagnement pour commencer.",
+    formQuestion: "Où souhaitez-vous être accompagné ?",
+  },
+};
+
+/**
+ * The wording to address a user with.
+ *
+ * An account whose role the API has not set yet reads as a passenger: it is the
+ * side the app was built for first, and it is what every user saw before this
+ * existed.
+ * @param {string} [role] - Role as returned by GET /api/users/profile.
+ * @returns {object} The sentences for that side of the app.
+ */
+export function copyForRole(role) {
+  return ROLE_COPY[normalizeRole(role)] ?? ROLE_COPY.passenger;
+}
+
+/**
  * Labels for `USER_GENRES` as returned by GET /api/users/profile.
  * @readonly
  * @enum {string}

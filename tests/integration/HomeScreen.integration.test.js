@@ -45,6 +45,93 @@ describe("HomeScreen — Integration Tests", () => {
         expect(await findByText("Bonjour Alice 👋")).toBeTruthy();
     });
 
+    it("reads nothing rather than calling the API without a session", async () => {
+        getSession.mockResolvedValue(null);
+
+        const { findByTestId } = render(<HomeScreen />);
+
+        expect(await findByTestId("home-empty")).toBeTruthy();
+        expect(getUserProfile).not.toHaveBeenCalled();
+        expect(getUpcomingMatchedJourneys).not.toHaveBeenCalled();
+    });
+
+    describe("depending on the role", () => {
+        it("asks a passenger to request an accompaniment", async () => {
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Alice", role: "passenger" },
+            });
+
+            const { findByText } = render(<HomeScreen />);
+
+            expect(await findByText("Demander un accompagnement")).toBeTruthy();
+            expect(await findByText("Votre prochain trajet")).toBeTruthy();
+        });
+
+        it("asks a companion to offer one instead", async () => {
+            // A volunteer opening the app used to be invited to ask for help.
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Léo", role: "companion" },
+            });
+
+            const { findByText, queryByText } = render(<HomeScreen />);
+
+            expect(await findByText("Proposer un accompagnement")).toBeTruthy();
+            expect(await findByText("Votre prochain accompagnement")).toBeTruthy();
+            expect(queryByText("Demander un accompagnement")).toBeNull();
+        });
+
+        it("speaks to a companion in their own terms", async () => {
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Léo", role: "companion" },
+            });
+
+            const { findByText } = render(<HomeScreen />);
+
+            expect(await findByText("Vos trajets rendent ceux des autres possibles.")).toBeTruthy();
+        });
+
+        it("still reads for an account whose role the API has not set", async () => {
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Alice", role: null },
+            });
+
+            const { findByText } = render(<HomeScreen />);
+
+            expect(await findByText("Demander un accompagnement")).toBeTruthy();
+        });
+
+        it("understands the roles stored on older accounts", async () => {
+            // The API still returns "valid" for companions created before it
+            // renamed its roles.
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Léo", role: "valid" },
+            });
+
+            const { findByText } = render(<HomeScreen />);
+
+            expect(await findByText("Proposer un accompagnement")).toBeTruthy();
+        });
+
+        it("tells a companion what an empty week means for them", async () => {
+            getUserProfile.mockResolvedValue({
+                success: true,
+                profile: { firstname: "Léo", role: "companion" },
+            });
+            getUpcomingMatchedJourneys.mockResolvedValue({ success: true, journeys: [] });
+
+            const { findByText } = render(<HomeScreen />);
+
+            expect(
+                await findByText("Aucun accompagnement prévu. Proposez un trajet et nous vous mettrons en relation."),
+            ).toBeTruthy();
+        });
+    });
+
     it("shows the API connection status", async () => {
         const { findByLabelText } = render(<HomeScreen />);
 

@@ -5,6 +5,7 @@ import RecordJourneyScreen from "../../screens/RecordJourneyScreen";
 import { recordJourney } from "../../utils/journeys";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "../../utils/location";
 import { getSession } from "../../utils/session";
+import { getUserProfile } from "../../utils/users";
 
 jest.mock("../../utils/location", () => ({
   geocodeAddress: jest.fn(),
@@ -14,6 +15,10 @@ jest.mock("../../utils/location", () => ({
 
 jest.mock("../../utils/journeys", () => ({
   recordJourney: jest.fn(),
+}));
+
+jest.mock("../../utils/users", () => ({
+    getUserProfile: jest.fn().mockResolvedValue({ success: true, profile: { role: "passenger" } }),
 }));
 
 jest.mock("../../utils/session", () => ({
@@ -47,6 +52,32 @@ jest.mock("@react-navigation/native", () => ({
 describe("RecordJourneyScreen — Integration Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getUserProfile.mockResolvedValue({ success: true, profile: { role: "passenger" } });
+  });
+
+  describe("depending on the role", () => {
+    it("asks a passenger where they want to be accompanied", async () => {
+      getSession.mockResolvedValue({ token: "jwt" });
+      getUserProfile.mockResolvedValue({ success: true, profile: { role: "passenger" } });
+
+      const { findByText } = render(<RecordJourneyScreen />);
+
+      expect(await findByText("Où souhaitez-vous être accompagné ?")).toBeTruthy();
+    });
+
+    it("asks a companion what trip they are making", async () => {
+      // Sending a volunteer from "Proposer un accompagnement" to a form asking
+      // where they want to be accompanied made no sense.
+      getSession.mockResolvedValue({ token: "jwt" });
+      getUserProfile.mockResolvedValue({ success: true, profile: { role: "companion" } });
+
+      const { findByText } = render(<RecordJourneyScreen />);
+
+      expect(
+        await findByText("Quel trajet faites-vous ? Nous y associerons une personne à accompagner."),
+      ).toBeTruthy();
+      expect(await findByText("Proposer un accompagnement")).toBeTruthy();
+    });
   });
 
   it("fills the departure address from the current position", async () => {
