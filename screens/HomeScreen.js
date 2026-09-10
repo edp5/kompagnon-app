@@ -13,6 +13,7 @@ import {
 
 import logo from "../assets/kompagnon-logo.png";
 import Icon from "../components/Icon";
+import { copyForRole } from "../constants";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { checkHealth } from "../utils/api-fetch";
 import { formatShortDate, formatTime } from "../utils/format";
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const [apiIsActive, setApiIsActive] = useState(true);
   const [firstname, setFirstname] = useState(null);
+  const [role, setRole] = useState(null);
   const [nextJourney, setNextJourney] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +47,7 @@ export default function HomeScreen() {
 
     if (profile.success) {
       setFirstname(profile.profile?.firstname ?? null);
+      setRole(profile.profile?.role ?? null);
     }
     setNextJourney(journeys.success ? journeys.journeys[0] ?? null : null);
     setLoading(false);
@@ -55,6 +58,8 @@ export default function HomeScreen() {
       load();
     }, [load]),
   );
+
+  const copy = copyForRole(role);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -80,19 +85,19 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.greeting}>Bonjour{firstname ? ` ${firstname}` : ""} 👋</Text>
-        <Text style={styles.subtitle}>L&apos;accompagnement accessible, pensé pour tous.</Text>
+        <Text style={styles.subtitle}>{copy.tagline}</Text>
 
         <TouchableOpacity
           style={styles.primaryButton}
           onPress={() => navigation.navigate("RecordJourney")}
           accessibilityRole="button"
-          accessibilityLabel="Demander un accompagnement"
+          accessibilityLabel={copy.action}
         >
           <Icon name="navigation" size={18} color={colors.textOnDark} />
-          <Text style={styles.primaryButtonText}>Demander un accompagnement</Text>
+          <Text style={styles.primaryButtonText}>{copy.action}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Votre prochain trajet</Text>
+        <Text style={styles.sectionTitle}>{copy.nextHeading}</Text>
 
         {loading ? (
           <View style={styles.skeletonCard} testID="home-skeleton">
@@ -137,9 +142,7 @@ export default function HomeScreen() {
         ) : (
           <View style={styles.emptyCard} testID="home-empty">
             <Icon name="calendar" size={20} color={colors.textLight} />
-            <Text style={styles.emptyText}>
-              Aucun trajet à venir. Demandez un accompagnement pour commencer.
-            </Text>
+            <Text style={styles.emptyText}>{copy.empty}</Text>
           </View>
         )}
       </ScrollView>

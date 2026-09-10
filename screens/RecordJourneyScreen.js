@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,10 +16,12 @@ import {
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
 import Icon from "../components/Icon";
+import { copyForRole } from "../constants";
 import { colors, fonts, layout, radius, shadow } from "../theme/tokens";
 import { recordJourney } from "../utils/journeys";
 import { geocodeAddress, getCurrentPosition, reverseGeocode } from "../utils/location";
 import { getSession } from "../utils/session";
+import { getUserProfile } from "../utils/users";
 
 // Estimated arrival used until an explicit time picker is added.
 const DEFAULT_TRIP_MINUTES = 30;
@@ -34,6 +36,28 @@ export default function RecordJourneyScreen() {
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [role, setRole] = useState(null);
+
+  // Only the wording depends on it: the API reads the role off the account and
+  // records a passenger or a companion journey either way.
+  useEffect(() => {
+    let current = true;
+
+    (async () => {
+      const session = await getSession();
+      if (!session) {
+        return;
+      }
+      const result = await getUserProfile({ token: session.token });
+      if (current && result?.success) {
+        setRole(result.profile?.role ?? null);
+      }
+    })();
+
+    return () => {
+      current = false;
+    };
+  }, []);
 
   // Typing invalidates the resolved coordinates: they are re-resolved from the
   // address on submit (or set directly when a suggestion is picked).
@@ -136,6 +160,8 @@ export default function RecordJourneyScreen() {
     }
   };
 
+  const copy = copyForRole(role);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -154,7 +180,7 @@ export default function RecordJourneyScreen() {
               <Icon name="arrow-left" size={22} color={colors.navy} />
             </TouchableOpacity>
             <Text style={styles.title}>Nouveau trajet</Text>
-            <Text style={styles.subtitle}>Où souhaitez-vous être accompagné ?</Text>
+            <Text style={styles.subtitle}>{copy.formQuestion}</Text>
           </View>
 
           {error && (
@@ -212,13 +238,13 @@ export default function RecordJourneyScreen() {
             onPress={handleSubmit}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Demander un accompagnement"
+            accessibilityLabel={copy.action}
             accessibilityState={{ disabled: loading }}
           >
             {loading ? (
               <ActivityIndicator color={colors.textOnDark} accessibilityLabel="Chargement…" />
             ) : (
-              <Text style={styles.submitButtonText}>Demander un accompagnement</Text>
+              <Text style={styles.submitButtonText}>{copy.action}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
