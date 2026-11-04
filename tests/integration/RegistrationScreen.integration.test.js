@@ -441,10 +441,11 @@ describe("RegistrationScreen — Integration Tests", () => {
 
             await waitFor(() => {
                 expect(Alert.alert).toHaveBeenCalledWith(
-                    "Succès",
-                    "Compte créé avec succès !",
+                    "Compte créé",
+                    "Un email d'activation vient de vous être envoyé. Activez votre compte pour choisir votre rôle et pouvoir vous connecter.",
                     expect.arrayContaining([
-                        expect.objectContaining({ text: "OK" }),
+                        expect.objectContaining({ text: "Plus tard" }),
+                        expect.objectContaining({ text: "Activer maintenant" }),
                     ])
                 );
             });
@@ -453,6 +454,36 @@ describe("RegistrationScreen — Integration Tests", () => {
             act(() => alertCallback());
 
             expect(mockNavigate).toHaveBeenCalledWith("Login");
+        });
+
+        it("should navigate to ActivateAccount when choosing 'Activer maintenant' on success alert", async () => {
+            apiFetchModule.apiFetch.mockResolvedValueOnce({ ok: true });
+
+            const { getByText, getByPlaceholderText } = render(
+                <RegistrationScreen />
+            );
+
+            fillAndSubmit(
+                {
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    birthday: SAISIE_DATE,
+                    email: "utilisateur@exemple.com",
+                    password: SAISIE_FORMULAIRE,
+                    confirmPassword: SAISIE_FORMULAIRE,
+                },
+                getByPlaceholderText,
+                getByText
+            );
+
+            await waitFor(() => {
+                expect(Alert.alert).toHaveBeenCalled();
+            });
+
+            const activateNowCallback = Alert.alert.mock.calls[0][2][1].onPress;
+            act(() => activateNowCallback());
+
+            expect(mockNavigate).toHaveBeenCalledWith("ActivateAccount");
         });
 
         it("should display API error message on failed registration (non-ok response)", async () => {

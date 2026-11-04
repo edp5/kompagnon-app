@@ -139,4 +139,16 @@ describe("LoginScreen — Integration Tests", () => {
         fireEvent.press(getByText("S'inscrire"));
         expect(mockNavigate).toHaveBeenCalledWith("Register");
     });
+
+    it("should navigate to ActivateAccount when tapping Activer mon compte", () => {
+        const { getByText } = render(<LoginScreen />);
+        fireEvent.press(getByText("Activer mon compte"));
+        expect(mockNavigate).toHaveBeenCalledWith("ActivateAccount");
+    });
+
+    it("should navigate to ForgotPassword when tapping Mot de passe oublié ?", () => {
+        const { getByText } = render(<LoginScreen />);
+        fireEvent.press(getByText("Mot de passe oublié ?"));
+        expect(mockNavigate).toHaveBeenCalledWith("ForgotPassword");
+    });
 });
