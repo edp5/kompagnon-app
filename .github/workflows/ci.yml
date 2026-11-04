@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout code and configure node
-        uses: edp5/edp5-actions/checkout-node@v1.9.0
+        uses: edp5/edp5-actions/checkout-node@v1.10.0
         with:
           file-version: .nvmrc
           installCommand: npm ci
@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout code and configure node
-        uses: edp5/edp5-actions/checkout-node@v1.9.0
+        uses: edp5/edp5-actions/checkout-node@v1.10.0
         with:
           file-version: .nvmrc
           installCommand: npm ci
